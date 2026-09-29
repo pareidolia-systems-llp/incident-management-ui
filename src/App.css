@@ -19,4 +19,10 @@
 .audit-timeline-item::before { content: ''; position: absolute; left: -0.43rem; top: 0.25rem; width: 0.72rem; height: 0.72rem; border-radius: 50%; background: #2d6aab; border: 2px solid #fff; box-shadow: 0 0 0 1px #b9cce0; }
 .audit-timeline-item:last-child { padding-bottom: 0; border-left-color: transparent; }
 .audit-value-change { display: inline-flex; align-items: center; max-width: 100%; padding: 0.3rem 0.5rem; border-radius: 0.25rem; color: #3d5168; background: #f1f5f9; font-size: 0.875rem; overflow-wrap: anywhere; }
+.action-panel { border-left: 4px solid #2d6aab; }
+.more-actions { position: relative; }
+.more-actions summary { list-style: none; }
+.more-actions summary::-webkit-details-marker { display: none; }
+.more-actions-menu { position: absolute; z-index: 2; right: 0; min-width: 210px; }
+.more-actions-menu .btn + .btn { margin-top: 0.25rem; }
 @media (max-width: 767.98px) { .sidebar { min-height: auto; width: 100%; } .sidebar .nav { flex-direction: row !important; flex-wrap: wrap; gap: 0.25rem; } .sidebar .nav-link { padding: 0.45rem 0.65rem; } }
