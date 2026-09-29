@@ -14,3 +14,8 @@ export async function getIncidentHistory(id) {
   const response = await apiClient.get(`/api/incidents/${id}/history`)
   return Array.isArray(response.data) ? response.data : response.data.content || []
 }
+
+export async function createIncident(payload) {
+  const response = await apiClient.post('/api/incidents', payload)
+  return response.data
+}
