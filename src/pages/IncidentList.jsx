@@ -43,13 +43,13 @@ function IncidentList() {
       {state === 'loading' && <ApiState type="loading" />}
       {state === 'error' && <ApiState type="error" message={error} onRetry={loadIncidents} />}
       {state === 'ready' && <>
-        <div className="card section-card mb-3"><div className="card-body"><div className="row g-3">
+        <div className="card section-card filter-panel mb-3"><div className="card-body"><div className="row g-3 align-items-end">
           <div className="col-12 col-lg-4"><label className="form-label small fw-semibold">Search</label><input name="search" value={filters.search} onChange={updateFilter} className="form-control" placeholder="Number, title, or owner" /></div>
           <FilterSelect label="Status" name="status" value={filters.status} options={choices.statuses} onChange={updateFilter} />
           <FilterSelect label="Severity" name="severity" value={filters.severity} options={choices.severities} onChange={updateFilter} />
           <FilterSelect label="Issue type" name="issueType" value={filters.issueType} options={choices.issueTypes} onChange={updateFilter} />
         </div></div></div>
-        <div className="card section-card overflow-hidden"><div className="card-body p-0">
+        <div className="card section-card incident-table-card overflow-hidden"><div className="card-body p-0">
           {filteredIncidents.length === 0 ? <ApiState type="empty" /> : <div className="table-responsive"><table className="table table-hover mb-0"><thead><tr><th>Incident Number</th><th>Title</th><th>Issue Type</th><th>Severity</th><th>Priority</th><th>Assigned Owner</th><th>Status</th><th>Reported At</th><th className="text-end"> </th></tr></thead><tbody>
             {filteredIncidents.map((incident) => <tr key={incident.id}><td className="fw-semibold">{readField(incident, 'incidentNumber', 'number') || '—'}</td><td>{readField(incident, 'title') || '—'}</td><td>{labelize(readField(incident, 'issueType', 'issue_type'))}</td><td><SeverityBadge severity={readField(incident, 'severity')} /></td><td>{labelize(readField(incident, 'priority'))}</td><td>{readField(incident, 'assignedOwner', 'assignedTo', 'owner') || 'Unassigned'}</td><td><StatusBadge status={readField(incident, 'status')} /></td><td className="text-nowrap">{formatDate(readField(incident, 'reportedAt', 'createdAt'))}</td><td className="text-end"><Link className="btn btn-sm btn-outline-primary" to={`/incidents/${incident.id}`}>View</Link></td></tr>)}
           </tbody></table></div>}

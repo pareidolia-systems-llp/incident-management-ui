@@ -49,7 +49,7 @@ function Dashboard() {
         <div className="row g-3">
           {statDefinitions.map((stat) => (
             <div className="col-12 col-sm-6 col-lg-4 col-xxl-3" key={stat.label}>
-              <div className="card stat-card h-100"><div className="card-body d-flex flex-column justify-content-between"><span className="text-secondary small">{stat.label}</span><div className={`stat-value text-${stat.tone}`}>{stat.value(incidents)}</div></div></div>
+              <div className={`card stat-card stat-card-${stat.tone} h-100`}><div className="card-body d-flex flex-column justify-content-between"><span className="stat-label">{stat.label}</span><div className={`stat-value text-${stat.tone}`}>{stat.value(incidents)}</div></div></div>
             </div>
           ))}
         </div>
