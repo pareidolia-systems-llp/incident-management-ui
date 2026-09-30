@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, reclassifyIncident, resolveIncident, reviewIncident, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
+import useAuth from '../auth/useAuth'
 import ApiState from '../components/ApiState'
 import { SeverityBadge, StatusBadge } from '../components/IncidentBadges'
 import PageTitle from '../components/PageTitle'
@@ -22,17 +23,17 @@ const issueTypeOptions = ['IT_ISSUE', 'SERVICE_REQUEST', 'SUSPECTED_SECURITY_INC
 const levelOptions = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 
 const actionDefinitions = {
-  assign: { label: 'Assign Incident', submitLabel: 'Assign Incident', submit: assignIncident, fields: [field('assignedOwner', 'Assigned Owner', true), field('changedBy', 'Changed By', true), field('remarks', 'Remarks', false, 'textarea')] },
-  investigation: { label: 'Update Investigation', submitLabel: 'Save Investigation', submit: updateInvestigation, prefill: ['investigationDetails', 'rootCause', 'actionsTaken', 'containmentAction', 'correctiveAction'], fields: [field('investigationDetails', 'Investigation Details', false, 'textarea'), field('rootCause', 'Root Cause', false, 'textarea'), field('actionsTaken', 'Actions Taken', false, 'textarea'), field('containmentAction', 'Containment Action', false, 'textarea'), field('correctiveAction', 'Corrective Action', false, 'textarea'), field('changedBy', 'Changed By', true), field('remarks', 'Remarks', false, 'textarea')] },
-  resolve: { label: 'Resolve Incident', submitLabel: 'Resolve Incident', submit: resolveIncident, fields: [field('resolutionDetails', 'Resolution Details', true, 'textarea'), field('changedBy', 'Changed By', true), field('remarks', 'Remarks', false, 'textarea')] },
-  validate: { label: 'Validate Incident', submitLabel: 'Validate Incident', submit: validateIncident, fields: [field('validationDetails', 'Validation Details', true, 'textarea'), field('validatedBy', 'Validated By', true), field('remarks', 'Remarks', false, 'textarea')] },
-  close: { label: 'Close Incident', submitLabel: 'Close Incident', submit: closeIncident, fields: [field('closureConfirmedBy', 'Closure Confirmed By', true), field('remarks', 'Remarks', false, 'textarea')] },
-  review: { label: 'Review Incident', submitLabel: 'Save Review', submit: reviewIncident, fields: [field('reviewDetails', 'Review Details', true, 'textarea'), field('reviewedBy', 'Reviewed By', true), field('lessonsLearned', 'Lessons Learned', false, 'textarea'), field('preventiveAction', 'Preventive Action', false, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
-  reclassify: { label: 'Reclassify Incident', submitLabel: 'Update Classification', submit: reclassifyIncident, prefill: ['issueType'], fields: [field('issueType', 'Issue Type', true, 'select', issueTypeOptions), field('changedBy', 'Changed By', true), field('remarks', 'Remarks', false, 'textarea')] },
-  severity: { label: 'Change Severity', submitLabel: 'Update Severity', submit: changeIncidentSeverity, prefill: ['severity'], fields: [field('severity', 'Severity', true, 'select', levelOptions), field('changedBy', 'Changed By', true), field('remarks', 'Remarks', false, 'textarea')] },
-  priority: { label: 'Change Priority', submitLabel: 'Update Priority', submit: changeIncidentPriority, prefill: ['priority'], fields: [field('priority', 'Priority', true, 'select', levelOptions), field('changedBy', 'Changed By', true), field('remarks', 'Remarks', false, 'textarea')] },
-  escalate: { label: 'Escalate Incident', submitLabel: 'Escalate Incident', submit: escalateIncident, fields: [field('escalationDetails', 'Escalation Details', true, 'textarea'), field('changedBy', 'Changed By', true), field('remarks', 'Remarks', false, 'textarea')] },
-  evidence: { label: 'Update Evidence Reference', submitLabel: 'Update Evidence', submit: updateEvidenceReference, fields: [field('evidenceReference', 'Evidence Reference', true, 'textarea'), field('changedBy', 'Changed By', true), field('remarks', 'Remarks', false, 'textarea')] },
+  assign: { label: 'Assign Incident', submitLabel: 'Assign Incident', submit: assignIncident, fields: [field('assignedOwner', 'Assigned Owner', true), field('remarks', 'Remarks', false, 'textarea')] },
+  investigation: { label: 'Update Investigation', submitLabel: 'Save Investigation', submit: updateInvestigation, prefill: ['investigationDetails', 'rootCause', 'actionsTaken', 'containmentAction', 'correctiveAction'], fields: [field('investigationDetails', 'Investigation Details', false, 'textarea'), field('rootCause', 'Root Cause', false, 'textarea'), field('actionsTaken', 'Actions Taken', false, 'textarea'), field('containmentAction', 'Containment Action', false, 'textarea'), field('correctiveAction', 'Corrective Action', false, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
+  resolve: { label: 'Resolve Incident', submitLabel: 'Resolve Incident', submit: resolveIncident, fields: [field('resolutionDetails', 'Resolution Details', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
+  validate: { label: 'Validate Incident', submitLabel: 'Validate Incident', submit: validateIncident, fields: [field('validationDetails', 'Validation Details', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
+  close: { label: 'Close Incident', submitLabel: 'Close Incident', submit: closeIncident, fields: [field('remarks', 'Remarks', false, 'textarea')] },
+  review: { label: 'Review Incident', submitLabel: 'Save Review', submit: reviewIncident, fields: [field('reviewDetails', 'Review Details', true, 'textarea'), field('lessonsLearned', 'Lessons Learned', false, 'textarea'), field('preventiveAction', 'Preventive Action', false, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
+  reclassify: { label: 'Reclassify Incident', submitLabel: 'Update Classification', submit: reclassifyIncident, prefill: ['issueType'], fields: [field('issueType', 'Issue Type', true, 'select', issueTypeOptions), field('remarks', 'Remarks', false, 'textarea')] },
+  severity: { label: 'Change Severity', submitLabel: 'Update Severity', submit: changeIncidentSeverity, prefill: ['severity'], fields: [field('severity', 'Severity', true, 'select', levelOptions), field('remarks', 'Remarks', false, 'textarea')] },
+  priority: { label: 'Change Priority', submitLabel: 'Update Priority', submit: changeIncidentPriority, prefill: ['priority'], fields: [field('priority', 'Priority', true, 'select', levelOptions), field('remarks', 'Remarks', false, 'textarea')] },
+  escalate: { label: 'Escalate Incident', submitLabel: 'Escalate Incident', submit: escalateIncident, fields: [field('escalationDetails', 'Escalation Details', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
+  evidence: { label: 'Update Evidence Reference', submitLabel: 'Update Evidence', submit: updateEvidenceReference, fields: [field('evidenceReference', 'Evidence Reference', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
 }
 
 const actionsByStatus = { OPEN: ['assign'], ASSIGNED: ['investigation', 'resolve'], IN_PROGRESS: ['investigation', 'resolve'], RESOLVED: ['validate'], VALIDATED: ['close'], CLOSED: ['review'] }
@@ -42,12 +43,14 @@ function field(name, label, required = false, type = 'text', options = []) { ret
 
 function IncidentDetails() {
   const { id } = useParams()
+  const { user } = useAuth()
   const [incident, setIncident] = useState(null)
   const [history, setHistory] = useState([])
   const [state, setState] = useState('loading')
   const [error, setError] = useState('')
   const [historyState, setHistoryState] = useState('loading')
   const [historyError, setHistoryError] = useState('')
+  const [accessDenied, setAccessDenied] = useState(false)
   const [activeAction, setActiveAction] = useState(null)
   const [actionValues, setActionValues] = useState({})
   const [actionErrors, setActionErrors] = useState({})
@@ -57,8 +60,9 @@ function IncidentDetails() {
   const loadIncident = useCallback(async () => {
     setState('loading')
     setHistoryState('loading')
+    setAccessDenied(false)
     const [incidentResult, historyResult] = await Promise.allSettled([getIncident(id), getIncidentHistory(id)])
-    if (incidentResult.status === 'fulfilled') { setIncident(incidentResult.value); setState('ready') } else { setError(getErrorMessage(incidentResult.reason)); setState('error') }
+    if (incidentResult.status === 'fulfilled') { setIncident(incidentResult.value); setState('ready') } else { setAccessDenied(incidentResult.reason.response?.status === 403); setError(getErrorMessage(incidentResult.reason)); setState('error') }
     if (historyResult.status === 'fulfilled') { setHistory(historyResult.value); setHistoryState('ready') } else { setHistoryError(getErrorMessage(historyResult.reason, 'We could not load the audit history. Please try again.')); setHistoryState('error') }
   }, [id])
 
@@ -106,19 +110,21 @@ function IncidentDetails() {
   }
 
   if (state === 'loading') return <><PageTitle title="Incident Details" /><ApiState type="loading" /></>
-  if (state === 'error') return <><PageTitle title="Incident Details" /><ApiState type="error" message={error} onRetry={loadIncident} /></>
+  if (state === 'error') return <><PageTitle title={accessDenied ? 'Access denied' : 'Incident Details'} /><ApiState type="error" message={error} onRetry={loadIncident} /></>
 
   const reviewCompleted = incident.status === 'CLOSED' && hasRecordedValue(incident.reviewedAt)
-  const availableActions = (actionsByStatus[incident.status] || []).filter((actionKey) => actionKey !== 'review' || !reviewCompleted)
-  const availableOperationalActions = incident.status === 'CLOSED' ? [] : operationalActionKeys
+  const canPerformOperationalActions = ['IT_HANDLER', 'ADMIN'].includes(user.role)
+  const canPerformReviewActions = ['REVIEWER', 'ADMIN'].includes(user.role)
+  const availableActions = (actionsByStatus[incident.status] || []).filter((actionKey) => (actionKey === 'review' ? canPerformReviewActions && !reviewCompleted : ['validate', 'close'].includes(actionKey) ? canPerformReviewActions : canPerformOperationalActions))
+  const availableOperationalActions = incident.status === 'CLOSED' || !canPerformOperationalActions ? [] : operationalActionKeys
   return (
     <>
       <PageTitle title={incident.incidentNumber || 'Incident Details'} description={incident.title} actions={<Link className="btn btn-outline-secondary" to="/incidents">Back to Incidents</Link>} />
       <div className="d-flex flex-wrap gap-2 mb-3"><StatusBadge status={incident.status} /><SeverityBadge severity={incident.severity} /></div>
-      <ActionsPanel actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted} onOpen={openAction} />
+      <ActionsPanel actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} />
       <div className="row g-3 mb-4">{sections.map((section) => <DetailSection key={section.title} section={section} incident={incident} />)}</div>
       <AuditTrail history={history} state={historyState} error={historyError} onRetry={loadIncident} />
-      {activeAction && <ActionModal action={actionDefinitions[activeAction]} values={actionValues} errors={actionErrors} error={actionError} saving={savingAction} onChange={updateActionValue} onClose={closeAction} onSubmit={submitAction} />}
+      {activeAction && <ActionModal action={actionDefinitions[activeAction]} user={user} values={actionValues} errors={actionErrors} error={actionError} saving={savingAction} onChange={updateActionValue} onClose={closeAction} onSubmit={submitAction} />}
     </>
   )
 }
@@ -127,8 +133,8 @@ function ActionsPanel({ actionKeys, operationalActionKeys: activeOperationalActi
   return <section className="card section-card action-panel mb-4"><div className="card-body d-sm-flex align-items-center justify-content-between gap-3"><div><h2 className="h6 text-dark mb-1">Actions</h2><p className="text-secondary small mb-0">Available actions for the current incident status.</p></div><div className="d-flex flex-wrap align-items-center gap-2 mt-3 mt-sm-0">{actionKeys.map((key) => <button key={key} className="btn btn-primary btn-sm" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>)}{reviewCompleted && <span className="text-secondary small">Review completed</span>}{activeOperationalActions.length > 0 && <details className="more-actions"><summary className="btn btn-outline-secondary btn-sm">More Actions</summary><div className="more-actions-menu border rounded bg-white shadow-sm p-2 mt-2">{activeOperationalActions.map((key) => <button key={key} className="btn btn-sm btn-light text-start w-100" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>)}</div></details>}{!actionKeys.length && !reviewCompleted && !activeOperationalActions.length && <span className="text-secondary small">No lifecycle actions are available.</span>}</div></div></section>
 }
 
-function ActionModal({ action, values, errors, error, saving, onChange, onClose, onSubmit }) {
-  return <><div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title"><div className="modal-dialog modal-lg modal-dialog-scrollable"><form className="modal-content" noValidate onSubmit={onSubmit}><div className="modal-header"><h2 className="modal-title fs-5" id="action-modal-title">{action.label}</h2><button type="button" className="btn-close" aria-label="Close" onClick={onClose} disabled={saving} /></div><div className="modal-body">{error && <div className="alert alert-danger" role="alert">{error}</div>}<div className="row g-3">{action.fields.map((item) => <ActionField key={item.name} field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />)}</div></div><div className="modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={saving}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{saving ? 'Saving…' : action.submitLabel}</button></div></form></div></div><div className="modal-backdrop show" /></>
+function ActionModal({ action, user, values, errors, error, saving, onChange, onClose, onSubmit }) {
+  return <><div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title"><div className="modal-dialog modal-lg modal-dialog-scrollable"><form className="modal-content" noValidate onSubmit={onSubmit}><div className="modal-header"><h2 className="modal-title fs-5" id="action-modal-title">{action.label}</h2><button type="button" className="btn-close" aria-label="Close" onClick={onClose} disabled={saving} /></div><div className="modal-body">{error && <div className="alert alert-danger" role="alert">{error}</div>}<p className="small text-secondary">Action will be recorded as {user.email}.</p><div className="row g-3">{action.fields.map((item) => <ActionField key={item.name} field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />)}</div></div><div className="modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={saving}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{saving ? 'Saving…' : action.submitLabel}</button></div></form></div></div><div className="modal-backdrop show" /></>
 }
 
 function ActionField({ field: item, value, error, onChange }) {

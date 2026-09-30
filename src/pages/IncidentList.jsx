@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getIncidents } from '../api/incidents'
+import useAuth from '../auth/useAuth'
 import ApiState from '../components/ApiState'
 import { SeverityBadge, StatusBadge } from '../components/IncidentBadges'
 import PageTitle from '../components/PageTitle'
 import { formatDate, getErrorMessage, labelize, readField } from '../utils/incident'
 
 function IncidentList() {
+  const { user } = useAuth()
   const [incidents, setIncidents] = useState([])
   const [state, setState] = useState('loading')
   const [error, setError] = useState('')
@@ -37,7 +39,7 @@ function IncidentList() {
 
   return (
     <>
-      <PageTitle title="Incidents" description="Search and review reported incidents." actions={<Link className="btn btn-primary" to="/incidents/new">Create Incident</Link>} />
+      <PageTitle title="Incidents" description="Search and review reported incidents." actions={['REPORTER', 'ADMIN'].includes(user.role) ? <Link className="btn btn-primary" to="/incidents/new">Create Incident</Link> : null} />
       {state === 'loading' && <ApiState type="loading" />}
       {state === 'error' && <ApiState type="error" message={error} onRetry={loadIncidents} />}
       {state === 'ready' && <>

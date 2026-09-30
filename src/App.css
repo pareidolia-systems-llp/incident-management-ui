@@ -25,4 +25,7 @@
 .more-actions summary::-webkit-details-marker { display: none; }
 .more-actions-menu { position: absolute; z-index: 2; right: 0; min-width: 210px; }
 .more-actions-menu .btn + .btn { margin-top: 0.25rem; }
+.login-page { min-height: 100vh; background: #f4f7fb; }
+.login-card { width: min(100%, 440px); }
+.login-mark { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 12px; color: #fff; background: #13233b; font-weight: 800; }
 @media (max-width: 767.98px) { .sidebar { min-height: auto; width: 100%; } .sidebar .nav { flex-direction: row !important; flex-wrap: wrap; gap: 0.25rem; } .sidebar .nav-link { padding: 0.45rem 0.65rem; } }
