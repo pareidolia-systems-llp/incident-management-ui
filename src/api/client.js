@@ -5,6 +5,7 @@ export const backendBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://loca
 const apiClient = axios.create({
   baseURL: backendBaseUrl,
   withCredentials: true,
+  withXSRFToken: false,
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN',
   headers: { Accept: 'application/json' },
