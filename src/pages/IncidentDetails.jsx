@@ -10,7 +10,7 @@ import { actionGuidance, guidanceDescription } from '../utils/incidentGuidance'
 import { formatDate, getErrorMessage, labelize } from '../utils/incident'
 
 const sections = [
-  { title: 'Incident Information', fields: [['Incident Number', 'incidentNumber'], ['Title', 'title'], ['Description', 'description'], ['Reported At', 'reportedAt', 'date'], ['Reported By', 'reportedBy'], ['Reporter Department', 'reporterDepartment'], ['Affected System', 'affectedSystem'], ['Impacted User / Department', 'impactedUserOrDepartment']] },
+  { title: 'Incident Information', fields: [['Incident Number', 'incidentNumber'], ['Title', 'title'], ['Description', 'description'], ['Reported At', 'reportedAt', 'date'], ['Reported By', 'reportedBy'], ['Reporter Department', 'reporterDepartment'], ['Desk Number', 'deskNumber'], ['Affected System', 'affectedSystem'], ['Impacted User / Department', 'impactedUserOrDepartment']] },
   { title: 'Classification & Priority', fields: [['Issue Type', 'issueType', 'label'], ['Category', 'category', 'label'], ['Severity', 'severity', 'severity'], ['Priority', 'priority', 'label'], ['Status', 'status', 'status']] },
   { title: 'Assignment', fields: [['Assigned Owner', 'assignedOwner']] },
   { title: 'Investigation', fields: [['Investigation Details', 'investigationDetails'], ['Root Cause', 'rootCause'], ['Actions Taken', 'actionsTaken']] },
