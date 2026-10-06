@@ -54,11 +54,11 @@ textarea.form-control { min-height: auto; }
 .badge-status, .badge-severity { padding: 0.38em 0.58em; border-radius: 0.3rem; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.025em; }
 .detail-label { color: #72849a; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.055em; text-transform: uppercase; }
 .detail-value { color: #29415c; line-height: 1.48; overflow-wrap: anywhere; }
-.action-panel { border-left: 4px solid #3977ae; }
+.action-panel { overflow: visible; border-left: 4px solid #3977ae; }
 .more-actions { position: relative; }
 .more-actions summary { list-style: none; }
 .more-actions summary::-webkit-details-marker { display: none; }
-.more-actions-menu { position: absolute; z-index: 2; right: 0; min-width: 215px; border-color: #cedbe6 !important; }
+.more-actions-menu { position: absolute; top: 100%; z-index: 1000; right: 0; min-width: 215px; border-color: #cedbe6 !important; }
 .more-actions-menu .btn { color: #3a536c; }
 .more-actions-menu .btn:hover { background: #edf4fa; }
 .more-actions-menu .btn + .btn { margin-top: 0.25rem; }
@@ -78,3 +78,5 @@ textarea.form-control { min-height: auto; }
 .login-company { color: #657b91; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 @media (max-width: 991.98px) { .sidebar { width: 236px; } .page-content { padding: 1.5rem !important; } }
 @media (max-width: 767.98px) { .sidebar { width: 100%; min-height: auto; } .sidebar-brand { padding-bottom: 1rem; } .sidebar .nav { flex-direction: row !important; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.8rem; } .sidebar .nav-link { padding: 0.48rem 0.65rem; } .app-header { min-height: 62px; } .header-title { font-size: 0.78rem; } .page-content { padding: 1.15rem !important; } .table { font-size: 0.84rem; } }
+
+@media (max-width: 575.98px) { .more-actions { width: 100%; } .more-actions-menu { position: static; min-width: 0; width: 100%; } }
