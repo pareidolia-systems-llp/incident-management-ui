@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { createIncident } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import PageTitle from '../components/PageTitle'
+import FieldGuidance from '../components/FieldGuidance'
+import { guidanceDescription } from '../utils/incidentGuidance'
 import { getErrorMessage, labelize } from '../utils/incident'
 
 const initialValues = {
@@ -96,16 +98,16 @@ function AuthenticatedReporter({ user }) {
 function TextField({ label, name, required, as, values, errors, onChange }) {
   const Component = as || 'input'
   const fieldClass = `form-control${errors[name] ? ' is-invalid' : ''}`
-  return <div className={as ? 'col-12' : 'col-12 col-lg-6'}><label className="form-label fw-semibold" htmlFor={name}>{label}{required && <span className="text-danger"> *</span>}</label><Component id={name} name={name} value={values[name]} onChange={onChange} className={fieldClass} rows={as ? 5 : undefined} aria-describedby={errors[name] ? `${name}-error` : undefined} />{errors[name] && <div id={`${name}-error`} className="invalid-feedback">{errors[name]}</div>}</div>
+  return <div className={as ? 'col-12' : 'col-12 col-lg-6'}><label className="form-label fw-semibold" htmlFor={name}>{label}{required && <span className="text-danger"> *</span>}</label><Component id={name} name={name} value={values[name]} onChange={onChange} className={fieldClass} rows={as ? 5 : undefined} aria-describedby={guidanceDescription(name, name, errors[name])} />{errors[name] && <div id={`${name}-error`} className="invalid-feedback">{errors[name]}</div>}<FieldGuidance name={name} id={name} label={label} /></div>
 }
 
 function SelectField({ label, name, options, required, values, errors, onChange }) {
-  return <div className="col-12 col-sm-6 col-lg-3"><label className="form-label fw-semibold" htmlFor={name}>{label}{required && <span className="text-danger"> *</span>}</label><select id={name} name={name} value={values[name]} onChange={onChange} className={`form-select${errors[name] ? ' is-invalid' : ''}`} aria-describedby={errors[name] ? `${name}-error` : undefined}><option value="">Select {label}</option>{options.map((option) => <option key={option} value={option}>{formatEnumLabel(option)}</option>)}</select>{errors[name] && <div id={`${name}-error`} className="invalid-feedback">{errors[name]}</div>}</div>
+  return <div className="col-12 col-sm-6 col-lg-3"><label className="form-label fw-semibold" htmlFor={name}>{label}{required && <span className="text-danger"> *</span>}</label><select id={name} name={name} value={values[name]} onChange={onChange} className={`form-select${errors[name] ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription(name, name, errors[name])}><option value="">Select {label}</option>{options.map((option) => <option key={option} value={option}>{formatEnumLabel(option)}</option>)}</select>{errors[name] && <div id={`${name}-error`} className="invalid-feedback">{errors[name]}</div>}<FieldGuidance name={name} id={name} label={label} /></div>
 }
 
 function CategoryField({ issueType, values, errors, onChange }) {
   const categories = categoriesByIssueType[issueType] || []
-  return <div className="col-12 col-sm-6 col-lg-3"><label className="form-label fw-semibold" htmlFor="category">Category <span className="text-danger">*</span></label><select id="category" name="category" value={values.category} onChange={onChange} disabled={!issueType} className={`form-select${errors.category ? ' is-invalid' : ''}`} aria-describedby={errors.category ? 'category-error' : undefined}><option value="">{issueType ? 'Select Category' : 'Select Issue Type first'}</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select>{errors.category && <div id="category-error" className="invalid-feedback">{errors.category}</div>}</div>
+  return <div className="col-12 col-sm-6 col-lg-3"><label className="form-label fw-semibold" htmlFor="category">Category <span className="text-danger">*</span></label><select id="category" name="category" value={values.category} onChange={onChange} disabled={!issueType} className={`form-select${errors.category ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription('category', 'category', errors.category)}><option value="">{issueType ? 'Select Category' : 'Select Issue Type first'}</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select>{errors.category && <div id="category-error" className="invalid-feedback">{errors.category}</div>}<FieldGuidance name="category" id="category" label="Category" /></div>
 }
 
 function validate(values) {
