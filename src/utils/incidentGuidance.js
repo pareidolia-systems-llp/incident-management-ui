@@ -1,12 +1,12 @@
 // Explanations only; workflow rules and validation remain in the existing pages.
 export const fieldGuidance = {
-  reporterDepartment: { text: 'When reporting, enter the department you belong to.', example: 'Finance' },
+  reporterDepartment: { text: 'When reporting, select the department you belong to.', example: 'Operations (Annotation)' },
   title: { text: 'When reporting, give a short summary of the issue and its impact.', example: 'VPN connection drops on office workstation' },
   description: { text: 'When reporting, describe what happened, when it started, and how it affects your work. Do not include passwords, tokens, or secrets.', example: 'Since 9 am, the VPN disconnects every few minutes, interrupting access to the finance application.' },
-  issueType: { text: 'When reporting or reclassifying, choose the type of issue or request that best matches what is known.' },
-  category: { text: 'After choosing an issue type, select the closest matching area of the issue.' },
-  severity: { text: 'Choose the level of impact on people, systems, or information when reporting; reassess as the impact becomes clearer.' },
-  priority: { text: 'Choose how urgently the incident needs attention when reporting; reassess if urgency changes.' },
+  issueType: { text: 'When reporting or reclassifying, choose the type of issue or request that best matches what is known.', example: 'Choose IT Issue for a VPN connection failure; choose Service Request for a software installation request.' },
+  category: { text: 'After choosing an issue type, select the closest matching area of the issue.', example: 'For an IT issue involving VPN disconnections, choose Network / Connectivity.' },
+  severity: { text: 'Choose the level of impact on people, systems, or information when reporting; reassess as the impact becomes clearer.', example: 'Consider whether a connection failure affects one workstation or prevents a whole department from working.' },
+  priority: { text: 'Choose how urgently the incident needs attention when reporting; reassess if urgency changes.', example: 'Consider whether the affected work can wait or an imminent deadline needs attention sooner.' },
   affectedSystem: { text: 'When reporting, name the affected application, service, or device.', example: 'Office VPN on workstation FIN-023' },
   impactedUserOrDepartment: { text: 'When reporting, identify the people or departments affected.', example: 'Finance team at the Pune office' },
   investigationDetails: { text: 'During investigation, record what was checked and what was discovered.', example: 'Reviewed VPN logs and reproduced the connection failure on the affected workstation.' },

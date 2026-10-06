@@ -13,6 +13,14 @@ const initialValues = {
 
 const requiredFields = ['title', 'description', 'issueType', 'category', 'severity', 'priority']
 const issueTypes = ['IT_ISSUE', 'SERVICE_REQUEST', 'SUSPECTED_SECURITY_INCIDENT', 'INFORMATION_SECURITY_INCIDENT', 'MAJOR_CRITICAL_SECURITY_INCIDENT']
+const reporterDepartments = ['Operations (Annotation)', 'Operations (Perioperative Flow Analysis)', 'HR', 'R&D']
+const issueTypeGuide = {
+  IT_ISSUE: { meaning: 'Something in an application, device, network, or IT service is not working as expected.', example: 'VPN disconnecting or a workstation unable to connect to Wi-Fi.' },
+  SERVICE_REQUEST: { meaning: 'A request for access, setup, installation, or another routine IT service rather than a fault.', example: 'Requesting access to an internal application or requesting software installation.' },
+  SUSPECTED_SECURITY_INCIDENT: { meaning: 'Something appears suspicious but has not yet been confirmed as an information-security incident.', example: 'Unexpected MFA prompts or a suspicious email received by an employee.' },
+  INFORMATION_SECURITY_INCIDENT: { meaning: 'A confirmed security event affecting information, systems, accounts, or access.', example: 'Confirmed unauthorized access to a company account.' },
+  MAJOR_CRITICAL_SECURITY_INCIDENT: { meaning: 'A serious security incident with significant or widespread impact that requires urgent attention.', example: 'Major data exposure or widespread service disruption caused by a cyberattack.' },
+}
 const levels = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 const categoriesByIssueType = {
   IT_ISSUE: ['Network / Connectivity', 'Account / Access', 'Hardware', 'Software / Application', 'Email / Collaboration', 'Device / Peripheral', 'Other'],
@@ -77,14 +85,31 @@ function CreateIncident() {
       <PageTitle title="Create Incident" description="Register a new IT issue or incident." />
       <form noValidate onSubmit={handleSubmit}>
         {submitError && <div className="alert alert-danger" role="alert">{submitError}</div>}
-        <FormSection title="Reporter Information"><div className="row g-3"><AuthenticatedReporter user={user} /><TextField label="Reporter Department" name="reporterDepartment" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
+        <FormSection title="Reporter Information"><div className="row g-3"><AuthenticatedReporter user={user} /><SelectField label="Reporter Department" name="reporterDepartment" options={reporterDepartments} formatOption={(option) => option} columnClass="col-12 col-lg-6" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <FormSection title="Incident Details"><div className="row g-3"><TextField label="Title" name="title" required values={values} errors={errors} onChange={handleChange} /><TextField label="Description" name="description" required as="textarea" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
-        <FormSection title="Classification & Priority"><div className="row g-3"><SelectField label="Issue Type" name="issueType" options={issueTypes} required values={values} errors={errors} onChange={handleChange} /><CategoryField issueType={values.issueType} values={values} errors={errors} onChange={handleChange} /><SelectField label="Severity" name="severity" options={levels} required values={values} errors={errors} onChange={handleChange} /><SelectField label="Priority" name="priority" options={levels} required values={values} errors={errors} onChange={handleChange} /></div></FormSection>
+        <FormSection title="Classification & Priority"><div className="row g-3"><SelectField label="Issue Type" name="issueType" options={issueTypes} required values={values} errors={errors} onChange={handleChange} /><CategoryField issueType={values.issueType} values={values} errors={errors} onChange={handleChange} /><SelectField label="Severity" name="severity" options={levels} required values={values} errors={errors} onChange={handleChange} /><SelectField label="Priority" name="priority" options={levels} required values={values} errors={errors} onChange={handleChange} /></div><IssueTypeGuide /></FormSection>
         <FormSection title="Affected System / Impact"><div className="row g-3"><TextField label="Affected System" name="affectedSystem" values={values} errors={errors} onChange={handleChange} /><TextField label="Impacted User / Department" name="impactedUserOrDepartment" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <div className="d-flex flex-wrap justify-content-end gap-2"><button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/incidents')} disabled={submitting}>Cancel</button><button type="submit" className="btn btn-primary" disabled={submitting}>{submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{submitting ? 'Creating Incident…' : 'Create Incident'}</button></div>
       </form>
     </>
   )
+}
+
+function IssueTypeGuide() {
+  return <aside className="card bg-light border mt-3" aria-labelledby="issue-type-guide-title">
+    <div className="card-body p-3">
+      <h3 className="h6 mb-3" id="issue-type-guide-title">Choosing an Issue Type</h3>
+      <dl className="small text-secondary mb-0">
+        {issueTypes.map((type, index) => <div className={`row g-1${index ? ' border-top pt-2 mt-2' : ''}`} key={type}>
+          <dt className="col-12 col-md-3">{type === 'IT_ISSUE' ? 'IT Issue' : formatEnumLabel(type)}</dt>
+          <dd className="col-12 col-md-9 mb-0">
+            <div>{issueTypeGuide[type].meaning}</div>
+            <div className="mt-1"><span className="fw-semibold">Example:</span> {issueTypeGuide[type].example}</div>
+          </dd>
+        </div>)}
+      </dl>
+    </div>
+  </aside>
 }
 
 function FormSection({ title, children }) {
@@ -101,8 +126,8 @@ function TextField({ label, name, required, as, values, errors, onChange }) {
   return <div className={as ? 'col-12' : 'col-12 col-lg-6'}><label className="form-label fw-semibold" htmlFor={name}>{label}{required && <span className="text-danger"> *</span>}</label><Component id={name} name={name} value={values[name]} onChange={onChange} className={fieldClass} rows={as ? 5 : undefined} aria-describedby={guidanceDescription(name, name, errors[name])} />{errors[name] && <div id={`${name}-error`} className="invalid-feedback">{errors[name]}</div>}<FieldGuidance name={name} id={name} label={label} /></div>
 }
 
-function SelectField({ label, name, options, required, values, errors, onChange }) {
-  return <div className="col-12 col-sm-6 col-lg-3"><label className="form-label fw-semibold" htmlFor={name}>{label}{required && <span className="text-danger"> *</span>}</label><select id={name} name={name} value={values[name]} onChange={onChange} className={`form-select${errors[name] ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription(name, name, errors[name])}><option value="">Select {label}</option>{options.map((option) => <option key={option} value={option}>{formatEnumLabel(option)}</option>)}</select>{errors[name] && <div id={`${name}-error`} className="invalid-feedback">{errors[name]}</div>}<FieldGuidance name={name} id={name} label={label} /></div>
+function SelectField({ label, name, options, required, values, errors, onChange, formatOption = formatEnumLabel, columnClass = 'col-12 col-sm-6 col-lg-3' }) {
+  return <div className={columnClass}><label className="form-label fw-semibold" htmlFor={name}>{label}{required && <span className="text-danger"> *</span>}</label><select id={name} name={name} value={values[name]} onChange={onChange} className={`form-select${errors[name] ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription(name, name, errors[name])}><option value="">Select {label}</option>{options.map((option) => <option key={option} value={option}>{formatOption(option)}</option>)}</select>{errors[name] && <div id={`${name}-error`} className="invalid-feedback">{errors[name]}</div>}<FieldGuidance name={name} id={name} label={label} /></div>
 }
 
 function CategoryField({ issueType, values, errors, onChange }) {
