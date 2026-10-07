@@ -8,6 +8,7 @@ import PageTitle from '../components/PageTitle'
 import FieldGuidance from '../components/FieldGuidance'
 import { actionGuidance, guidanceDescription } from '../utils/incidentGuidance'
 import { formatDate, getErrorMessage, labelize } from '../utils/incident'
+import { getLifecycleActions } from '../utils/incidentActions'
 
 const sections = [
   { title: 'Incident Information', fields: [['Incident Number', 'incidentNumber'], ['Title', 'title'], ['Description', 'description'], ['Reported At', 'reportedAt', 'date'], ['Reported By', 'reportedBy'], ['Reporter Department', 'reporterDepartment'], ['Desk Number', 'deskNumber'], ['Affected System', 'affectedSystem'], ['Impacted User / Department', 'impactedUserOrDepartment']] },
@@ -38,7 +39,6 @@ const actionDefinitions = {
   evidence: { label: 'Update Evidence Reference', submitLabel: 'Update Evidence', submit: updateEvidenceReference, fields: [field('evidenceReference', 'Evidence Reference', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
 }
 
-const actionsByStatus = { OPEN: ['assign'], ASSIGNED: ['investigation', 'resolve'], IN_PROGRESS: ['investigation', 'resolve'], RESOLVED: ['validate'], VALIDATED: ['close'], CLOSED: ['review'] }
 const operationalActionKeys = ['reclassify', 'severity', 'priority', 'escalate', 'evidence']
 
 function field(name, label, required = false, type = 'text', options = []) { return { name, label, required, type, options } }
@@ -117,7 +117,7 @@ function IncidentDetails() {
   const reviewCompleted = incident.status === 'CLOSED' && hasRecordedValue(incident.reviewedAt)
   const canPerformOperationalActions = ['IT_HANDLER', 'ADMIN'].includes(user.role)
   const canPerformReviewActions = ['REVIEWER', 'ADMIN'].includes(user.role)
-  const availableActions = (actionsByStatus[incident.status] || []).filter((actionKey) => (actionKey === 'review' ? canPerformReviewActions && !reviewCompleted : ['validate', 'close'].includes(actionKey) ? canPerformReviewActions : canPerformOperationalActions))
+  const availableActions = getLifecycleActions(incident, user)
   const availableOperationalActions = incident.status === 'CLOSED' || !canPerformOperationalActions ? [] : operationalActionKeys
   return (
     <>
@@ -132,17 +132,38 @@ function IncidentDetails() {
 }
 
 function ActionsPanel({ actionKeys, operationalActionKeys: activeOperationalActions, reviewCompleted, onOpen }) {
-  return <section className="card section-card action-panel mb-4"><div className="card-body d-sm-flex align-items-center justify-content-between gap-3"><div><h2 className="h6 text-dark mb-1">Actions</h2><p className="text-secondary small mb-0">Available actions for the current incident status.</p></div><div className="d-flex flex-wrap align-items-center gap-2 mt-3 mt-sm-0">{actionKeys.map((key) => <button key={key} className="btn btn-primary btn-sm" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>)}{reviewCompleted && <span className="text-secondary small">Review completed</span>}{activeOperationalActions.length > 0 && <details className="more-actions"><summary className="btn btn-outline-secondary btn-sm">More Actions</summary><div className="more-actions-menu border rounded bg-white shadow-sm p-2 mt-2">{activeOperationalActions.map((key) => <button key={key} className="btn btn-sm btn-light text-start w-100" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>)}</div></details>}{!actionKeys.length && !reviewCompleted && !activeOperationalActions.length && <span className="text-secondary small">No lifecycle actions are available.</span>}</div></div></section>
+  return <section className="card section-card action-panel mb-4">
+    <div className="card-body d-sm-flex align-items-center justify-content-between gap-3">
+      <div><h2 className="h6 text-dark mb-1">Actions</h2><p className="text-secondary small mb-0">Available actions for the current incident status.</p></div>
+      <div className="d-flex flex-wrap align-items-center gap-2 mt-3 mt-sm-0">
+        {actionKeys.map((key) => key === 'assign' ? <div key={key} className="assignment-guidance">
+          <button className="btn btn-primary btn-sm" aria-describedby="assign-action-help" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>
+          <p id="assign-action-help" className="small text-secondary mt-1 mb-0">{actionGuidance[key]}</p>
+        </div> : <button key={key} className="btn btn-primary btn-sm" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>)}
+        {reviewCompleted && <span className="text-secondary small">Review completed</span>}
+        {activeOperationalActions.length > 0 && <details className="more-actions align-self-end">
+          <summary className="btn btn-outline-secondary btn-sm">More Actions</summary>
+          <div className="more-actions-menu border rounded bg-white shadow-sm p-2 mt-2">
+            {activeOperationalActions.map((key) => <button key={key} className="btn btn-sm btn-light text-start w-100 py-2" aria-labelledby={`action-${key}-label`} aria-describedby={`action-${key}-help`} onClick={() => onOpen(key)}>
+              <span id={`action-${key}-label`} className="d-block fw-semibold">{actionDefinitions[key].label}</span>
+              <span id={`action-${key}-help`} className="d-block small text-secondary fw-normal">{actionGuidance[key]}</span>
+            </button>)}
+          </div>
+        </details>}
+        {!actionKeys.length && !reviewCompleted && !activeOperationalActions.length && <span className="text-secondary small">No lifecycle actions are available.</span>}
+      </div>
+    </div>
+  </section>
 }
 
 function ActionModal({ actionKey, action, user, values, errors, error, saving, onChange, onClose, onSubmit }) {
-  return <><div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title"><div className="modal-dialog modal-lg modal-dialog-scrollable"><form className="modal-content" noValidate onSubmit={onSubmit}><div className="modal-header"><h2 className="modal-title fs-5" id="action-modal-title">{action.label}</h2><button type="button" className="btn-close" aria-label="Close" onClick={onClose} disabled={saving} /></div><div className="modal-body"><p className="small text-secondary">{actionGuidance[actionKey]}</p>{error && <div className="alert alert-danger" role="alert">{error}</div>}<p className="small text-secondary">Action will be recorded as {user.email}.</p><div className="row g-3">{action.fields.map((item) => <ActionField key={item.name} field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />)}</div></div><div className="modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={saving}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{saving ? 'Saving…' : action.submitLabel}</button></div></form></div></div><div className="modal-backdrop show" /></>
+  return <><div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title"><div className="modal-dialog modal-lg modal-dialog-scrollable"><form className="modal-content" noValidate onSubmit={onSubmit}><div className="modal-header"><h2 className="modal-title fs-5" id="action-modal-title">{action.label}</h2><button type="button" className="btn-close" aria-label="Close" onClick={onClose} disabled={saving} /></div><div className="modal-body"><p className="small text-secondary">{actionGuidance[actionKey]}</p>{error && <div className="alert alert-danger" role="alert">{error}</div>}<p className="small text-secondary">Action will be recorded as {user.email}.</p><div className="row g-3">{action.fields.map((item) => <ActionField key={item.name} actionKey={actionKey} field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />)}</div></div><div className="modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={saving}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{saving ? 'Saving…' : action.submitLabel}</button></div></form></div></div><div className="modal-backdrop show" /></>
 }
 
-function ActionField({ field: item, value, error, onChange }) {
-  if (item.type === 'select') return <div className="col-12 col-md-6"><label className="form-label fw-semibold" htmlFor={`action-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><select id={`action-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-select${error ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription(item.name, `action-${item.name}`, error)}>{item.options.map((option) => <option key={option} value={option}>{formatOptionLabel(option)}</option>)}</select>{error && <div id={`action-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance name={item.name} id={`action-${item.name}`} label={item.label} /></div>
+function ActionField({ field: item, value, error, onChange, actionKey }) {
+  if (item.type === 'select') return <div className="col-12 col-md-6"><label className="form-label fw-semibold" htmlFor={`action-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><select id={`action-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-select${error ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription(item.name, `action-${item.name}`, error)}>{item.options.map((option) => <option key={option} value={option}>{formatOptionLabel(option)}</option>)}</select>{error && <div id={`action-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`action-${item.name}`} label={item.label} /></div>
   const Component = item.type === 'textarea' ? 'textarea' : 'input'
-  return <div className={item.type === 'textarea' ? 'col-12' : 'col-12 col-md-6'}><label className="form-label fw-semibold" htmlFor={`action-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><Component id={`action-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-control${error ? ' is-invalid' : ''}`} rows={item.type === 'textarea' ? 4 : undefined} aria-describedby={guidanceDescription(item.name, `action-${item.name}`, error)} />{error && <div id={`action-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance name={item.name} id={`action-${item.name}`} label={item.label} /></div>
+  return <div className={item.type === 'textarea' ? 'col-12' : 'col-12 col-md-6'}><label className="form-label fw-semibold" htmlFor={`action-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><Component id={`action-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-control${error ? ' is-invalid' : ''}`} rows={item.type === 'textarea' ? 4 : undefined} aria-describedby={guidanceDescription(item.name, `action-${item.name}`, error)} />{error && <div id={`action-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`action-${item.name}`} label={item.label} /></div>
 }
 
 function DetailSection({ section, incident }) { return <section className="col-12 col-xl-6"><div className="card section-card h-100"><div className="card-body"><h2 className="h6 text-dark border-bottom pb-2 mb-3">{section.title}</h2><dl className="row mb-0">{section.fields.map(([label, fieldName, format]) => <DetailField key={fieldName} fieldName={fieldName} label={label} value={incident[fieldName]} format={format} />)}</dl></div></div></section> }

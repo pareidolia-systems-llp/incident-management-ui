@@ -1,7 +1,7 @@
-import { fieldGuidance } from '../utils/incidentGuidance'
+import { fieldGuidance, remarksGuidance } from '../utils/incidentGuidance'
 
-export default function FieldGuidance({ name, id, label }) {
-  const guidance = fieldGuidance[name]
+export default function FieldGuidance({ name, id, label, actionKey }) {
+  const guidance = (name === 'remarks' && remarksGuidance[actionKey]) || fieldGuidance[name]
   if (!guidance) return null
 
   return <div className="form-text">

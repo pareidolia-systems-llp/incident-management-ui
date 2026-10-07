@@ -58,7 +58,8 @@ textarea.form-control { min-height: auto; }
 .more-actions { position: relative; }
 .more-actions summary { list-style: none; }
 .more-actions summary::-webkit-details-marker { display: none; }
-.more-actions-menu { position: absolute; top: 100%; z-index: 1000; right: 0; min-width: 215px; border-color: #cedbe6 !important; }
+.more-actions-menu { position: absolute; top: 100%; z-index: 1000; right: 0; width: 22rem; max-width: calc(100vw - 3rem); border-color: #cedbe6 !important; }
+.assignment-guidance { max-width: 20rem; }
 .more-actions-menu .btn { color: #3a536c; }
 .more-actions-menu .btn:hover { background: #edf4fa; }
 .more-actions-menu .btn + .btn { margin-top: 0.25rem; }
