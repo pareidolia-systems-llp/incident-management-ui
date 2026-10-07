@@ -53,16 +53,17 @@ test('Assign, investigation, resolve and review retain their existing role and s
 
 test('original reporter sees Validate only for RESOLVED incidents', () => {
   const user = { role: 'REPORTER', email: 'reporter@example.test' }
-  assert.deepEqual(getLifecycleActions({ ...incident, status: 'RESOLVED' }, user), ['validate'])
+  assert.deepEqual(getLifecycleActions({ ...incident, status: 'RESOLVED' }, user), ['validate', 'resolutionFeedback'])
   for (const status of ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'VALIDATED', 'CLOSED']) {
     assert.equal(getLifecycleActions({ ...incident, status }, user).includes('validate'), false)
+    assert.equal(getLifecycleActions({ ...incident, status }, user).includes('resolutionFeedback'), false)
   }
 })
 
 test('validation matches normalized original reporter identity independently of role', () => {
   for (const role of ['REPORTER', 'ADMIN', 'IT_HANDLER', 'REVIEWER']) {
     assert.deepEqual(getLifecycleActions({ ...incident, status: 'RESOLVED', reportedBy: ' REPORTER@example.test ' },
-      { role, email: ' reporter@EXAMPLE.test ' }), ['validate'])
+      { role, email: ' reporter@EXAMPLE.test ' }), ['validate', 'resolutionFeedback'])
   }
 })
 

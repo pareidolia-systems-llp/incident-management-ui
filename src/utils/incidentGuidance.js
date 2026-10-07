@@ -1,5 +1,7 @@
 // Explanations only; workflow rules and validation remain in the existing pages.
 export const fieldGuidance = {
+  feedback: { text: 'Describe what is still failing after the attempted resolution and where you are seeing the problem.', example: "Login works on the IT administrator's system, but the application still shows an authentication error on my workstation." },
+  resolutionFeedbackEvidence: { text: 'Add a reference to supporting evidence such as a screenshot, log reference, ticket, or approved internal record. Do not include passwords, tokens, or secrets.', example: 'Screenshot LOGIN-ERROR-07OCT' },
   reporterDepartment: { text: 'When reporting, select the department you belong to.', example: 'Operations (Annotation)' },
   title: { text: 'When reporting, give a short summary of the issue and its impact.', example: 'VPN connection drops on office workstation' },
   description: { text: 'When reporting, describe what happened, when it started, and how it affects your work. Do not include passwords, tokens, or secrets.', example: 'Since 9 am, the VPN disconnects every few minutes, interrupting access to the finance application.' },
@@ -35,6 +37,7 @@ export const remarksGuidance = {
 }
 
 export const actionGuidance = {
+  resolutionFeedback: 'Report that the issue still occurs after testing the fix so the assigned IT handler can continue investigating.',
   assign: 'Assign responsibility for handling the incident to the appropriate IT owner.',
   investigation: 'Update findings and work performed as the investigation progresses.',
   resolve: 'Record the final fix when the incident has been resolved; validation follows this step.',
