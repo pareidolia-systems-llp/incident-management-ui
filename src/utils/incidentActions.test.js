@@ -30,10 +30,10 @@ test('missing or blank identities fail closed', () => {
   }
 })
 
-test('Validate remains available to reviewers and admins, not reporters or handlers', () => {
+test('Non-original reporters cannot validate regardless of role', () => {
   for (const role of ['REVIEWER', 'ADMIN', 'REPORTER', 'IT_HANDLER']) {
     assert.deepEqual(getLifecycleActions({ ...incident, status: 'RESOLVED' }, { role, email: 'other@example.test' }),
-      ['REVIEWER', 'ADMIN'].includes(role) ? ['validate'] : [])
+      [])
   }
 })
 
@@ -48,5 +48,30 @@ test('Assign, investigation, resolve and review retain their existing role and s
     assert.deepEqual(getLifecycleActions({ ...incident, status: 'CLOSED' }, user),
       ['REVIEWER', 'ADMIN'].includes(role) ? ['review'] : [])
     assert.deepEqual(getLifecycleActions({ ...incident, status: 'CLOSED', reviewedAt: '2026-10-07T10:00:00' }, user), [])
+  }
+})
+
+test('original reporter sees Validate only for RESOLVED incidents', () => {
+  const user = { role: 'REPORTER', email: 'reporter@example.test' }
+  assert.deepEqual(getLifecycleActions({ ...incident, status: 'RESOLVED' }, user), ['validate'])
+  for (const status of ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'VALIDATED', 'CLOSED']) {
+    assert.equal(getLifecycleActions({ ...incident, status }, user).includes('validate'), false)
+  }
+})
+
+test('validation matches normalized original reporter identity independently of role', () => {
+  for (const role of ['REPORTER', 'ADMIN', 'IT_HANDLER', 'REVIEWER']) {
+    assert.deepEqual(getLifecycleActions({ ...incident, status: 'RESOLVED', reportedBy: ' REPORTER@example.test ' },
+      { role, email: ' reporter@EXAMPLE.test ' }), ['validate'])
+  }
+})
+
+test('validation fails closed for missing or blank reporter or actor email', () => {
+  for (const email of [undefined, null, '', '   ']) {
+    const resolved = { ...incident, status: 'RESOLVED' }
+    assert.deepEqual(getLifecycleActions({ ...resolved, reportedBy: email },
+      { role: 'ADMIN', email: 'reporter@example.test' }), [])
+    assert.deepEqual(getLifecycleActions(resolved, { role: 'ADMIN', email }), [])
+    assert.deepEqual(getLifecycleActions({ ...resolved, reportedBy: email }, { role: 'ADMIN', email }), [])
   }
 })

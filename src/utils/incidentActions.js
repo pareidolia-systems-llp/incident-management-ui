@@ -10,7 +10,7 @@ export function getLifecycleActions(incident, user) {
 
   return (actionsByStatus[incident.status] || []).filter((actionKey) => {
     if (actionKey === 'close') return isOriginalReporter
-    if (actionKey === 'validate') return canPerformReviewActions
+    if (actionKey === 'validate') return isOriginalReporter
     if (actionKey === 'review') return canPerformReviewActions && !reviewCompleted
     return canPerformOperationalActions
   })
