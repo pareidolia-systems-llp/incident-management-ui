@@ -26,18 +26,26 @@ export const fieldGuidance = {
   preventiveAction: { text: 'During review, record an action intended to reduce the chance of recurrence.', example: 'Add network-adapter health checks to quarterly workstation maintenance.' },
 }
 
+export const remarksGuidance = {
+  investigation: { text: 'Add context about the investigation or any follow-up needed.', example: 'VPN failure reproduced on the affected workstation; logs attached for further analysis.' },
+  resolve: { text: 'Add context about the final fix and checks completed during resolution.', example: 'Authentication configuration corrected and login tested successfully.' },
+  validate: { text: 'Add any observations from checking that the resolution works.', example: 'Resolution verified; the affected service is functioning normally.' },
+  close: { text: 'Record the reporter\'s confirmation that the issue is resolved.', example: 'Reporter confirmed that the issue is resolved and normal service has been restored.' },
+  review: { text: 'Add any follow-up observations from the incident review.', example: 'No recurrence observed; preventive action documented for future incidents.' },
+}
+
 export const actionGuidance = {
-  assign: 'Assign responsibility for handling this incident while it is open.',
+  assign: 'Assign responsibility for handling the incident to the appropriate IT owner.',
   investigation: 'Update findings and work performed as the investigation progresses.',
   resolve: 'Record the final fix when the incident has been resolved; validation follows this step.',
   validate: 'Independently verify the resolution before the incident proceeds to closure.',
   close: 'Formally complete the incident workflow once the required resolution and verification steps have been completed.',
   review: 'After closure, record the review, lessons learned, and actions to prevent recurrence.',
-  reclassify: 'Update the issue type when new information changes how the incident should be classified.',
-  severity: 'Update the impact level as the extent of the incident becomes clearer.',
-  priority: 'Update the urgency when the need for attention changes.',
-  escalate: 'Request additional expertise or authority when the incident needs another responsible person or team.',
-  evidence: 'Add a reference to supporting evidence when it becomes available.',
+  reclassify: 'Change the incident type when new information shows that it belongs to a different classification.',
+  severity: 'Update the level of impact on users, systems, or information.',
+  priority: 'Update how urgently the incident requires attention.',
+  escalate: 'Request additional expertise, authority, or management attention when needed.',
+  evidence: 'Add or update references to supporting evidence such as logs, screenshots, tickets, or approved internal records.',
 }
 
 export function guidanceDescription(name, id, hasError) {

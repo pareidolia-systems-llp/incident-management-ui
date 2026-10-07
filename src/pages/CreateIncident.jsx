@@ -4,6 +4,7 @@ import { createIncident } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import PageTitle from '../components/PageTitle'
 import FieldGuidance from '../components/FieldGuidance'
+import IncidentLifecycleGuide from '../components/IncidentLifecycleGuide'
 import { guidanceDescription } from '../utils/incidentGuidance'
 import { getErrorMessage, labelize } from '../utils/incident'
 
@@ -83,6 +84,7 @@ function CreateIncident() {
   return (
     <>
       <PageTitle title="Create Incident" description="Register a new IT issue or incident." />
+      <IncidentLifecycleGuide />
       <form noValidate onSubmit={handleSubmit}>
         {submitError && <div className="alert alert-danger" role="alert">{submitError}</div>}
         <FormSection title="Reporter Information"><div className="row g-3"><AuthenticatedReporter user={user} /><SelectField label="Reporter Department" name="reporterDepartment" options={reporterDepartments} formatOption={(option) => option} columnClass="col-12 col-lg-6" values={values} errors={errors} onChange={handleChange} /><TextField label="Desk Number" name="deskNumber" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
