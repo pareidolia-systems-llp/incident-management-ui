@@ -1,7 +1,7 @@
 import { fieldGuidance, remarksGuidance } from '../utils/incidentGuidance'
 
 export default function FieldGuidance({ name, id, label, actionKey }) {
-  const guidance = (name === 'remarks' && remarksGuidance[actionKey]) || fieldGuidance[name]
+  const guidance = (actionKey === 'resolutionFeedback' && name === 'evidenceReference' && fieldGuidance.resolutionFeedbackEvidence) || (name === 'remarks' && remarksGuidance[actionKey]) || fieldGuidance[name]
   if (!guidance) return null
 
   return <div className="form-text">

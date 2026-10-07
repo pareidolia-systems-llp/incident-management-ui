@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, reclassifyIncident, resolveIncident, reviewIncident, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
+import { assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, reclassifyIncident, resolveIncident, reviewIncident, submitResolutionFeedback, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import ApiState from '../components/ApiState'
 import { SeverityBadge, StatusBadge } from '../components/IncidentBadges'
@@ -9,6 +9,7 @@ import FieldGuidance from '../components/FieldGuidance'
 import { actionGuidance, guidanceDescription } from '../utils/incidentGuidance'
 import { formatDate, getErrorMessage, labelize } from '../utils/incident'
 import { getLifecycleActions } from '../utils/incidentActions'
+import { resolutionFeedbackFields, validateAction, createPayload } from '../utils/incidentActionForm'
 
 const sections = [
   { title: 'Incident Information', fields: [['Incident Number', 'incidentNumber'], ['Title', 'title'], ['Description', 'description'], ['Reported At', 'reportedAt', 'date'], ['Reported By', 'reportedBy'], ['Reporter Department', 'reporterDepartment'], ['Desk Number', 'deskNumber'], ['Affected System', 'affectedSystem'], ['Impacted User / Department', 'impactedUserOrDepartment']] },
@@ -30,6 +31,7 @@ const actionDefinitions = {
   investigation: { label: 'Update Investigation', submitLabel: 'Save Investigation', submit: updateInvestigation, prefill: ['investigationDetails', 'rootCause', 'actionsTaken', 'containmentAction', 'correctiveAction'], fields: [field('investigationDetails', 'Investigation Details', false, 'textarea'), field('rootCause', 'Root Cause', false, 'textarea'), field('actionsTaken', 'Actions Taken', false, 'textarea'), field('containmentAction', 'Containment Action', false, 'textarea'), field('correctiveAction', 'Corrective Action', false, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
   resolve: { label: 'Resolve Incident', submitLabel: 'Resolve Incident', submit: resolveIncident, fields: [field('resolutionDetails', 'Resolution Details', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
   validate: { label: 'Validate Incident', submitLabel: 'Validate Incident', submit: validateIncident, fields: [field('validationDetails', 'Validation Details', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
+  resolutionFeedback: { label: 'Issue Still Persists', submitLabel: 'Issue Still Persists', submit: submitResolutionFeedback, fields: resolutionFeedbackFields },
   close: { label: 'Close Incident', submitLabel: 'Close Incident', submit: closeIncident, fields: [field('remarks', 'Remarks', false, 'textarea')] },
   review: { label: 'Review Incident', submitLabel: 'Save Review', submit: reviewIncident, fields: [field('reviewDetails', 'Review Details', true, 'textarea'), field('lessonsLearned', 'Lessons Learned', false, 'textarea'), field('preventiveAction', 'Preventive Action', false, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
   reclassify: { label: 'Reclassify Incident', submitLabel: 'Update Classification', submit: reclassifyIncident, prefill: ['issueType'], fields: [field('issueType', 'Issue Type', true, 'select', issueTypeOptions), field('remarks', 'Remarks', false, 'textarea')] },
@@ -177,8 +179,8 @@ function AuditTrail({ history, state, error, onRetry }) {
 function AuditEntry({ entry }) { const hasValueChange = hasValue(entry.oldValue) || hasValue(entry.newValue); return <li className="audit-timeline-item"><div className="d-sm-flex justify-content-between gap-3"><div className="fw-semibold text-dark">{actionLabel(entry.actionType)}</div><time className="text-secondary small text-nowrap">{formatDate(entry.changedAt)}</time></div><div className="text-secondary small mt-1">Changed by {entry.changedBy || 'Not recorded'}</div>{hasValueChange && <div className="audit-value-change mt-2"><span>{displayHistoryValue(entry.oldValue)}</span><span className="mx-2 text-secondary">→</span><span>{displayHistoryValue(entry.newValue)}</span></div>}{entry.remarks && <div className="mt-2 small"><span className="fw-semibold">Remarks:</span> {entry.remarks}</div>}</li> }
 
 function initialActionValues(action, incident) { return action.fields.reduce((values, item) => ({ ...values, [item.name]: action.prefill?.includes(item.name) ? incident[item.name] || '' : '' }), {}) }
-function createPayload(action, values) { return action.fields.reduce((payload, item) => ({ ...payload, [item.name]: values[item.name]?.trim() || '' }), {}) }
-function validateAction(action, values) { return action.fields.reduce((errors, item) => { if (item.required && !values[item.name]?.trim()) errors[item.name] = 'This field is required.'; return errors }, {}) }
+
+
 function getActionFieldErrors(error, action) { const allowedFields = new Set(action.fields.map((item) => item.name)); const payload = error.response?.data; const candidates = [payload?.fieldErrors, payload?.errors, payload]; for (const candidate of candidates) { if (Array.isArray(candidate)) { const errors = candidate.reduce((result, item) => { const message = item?.message || item?.defaultMessage; if (allowedFields.has(item?.field) && typeof message === 'string') result[item.field] = message; return result }, {}); if (Object.keys(errors).length) return errors } if (candidate && typeof candidate === 'object') { const errors = Object.entries(candidate).reduce((result, [name, message]) => { if (allowedFields.has(name) && typeof message === 'string') result[name] = message; return result }, {}); if (Object.keys(errors).length) return errors } } return {} }
 function getActionErrorMessage(error) { if (error.response?.status === 409) { const payload = error.response.data; const message = typeof payload === 'string' ? payload : payload?.message || payload?.error; if (typeof message === 'string' && !message.includes('\n')) return message; return 'This action is no longer available because the incident lifecycle state has changed.' } return getErrorMessage(error, 'The action could not be saved. Please review the form and try again.') }
 function formatBoolean(value) { return value === true ? 'Yes' : value === false ? 'No' : 'Not recorded' }

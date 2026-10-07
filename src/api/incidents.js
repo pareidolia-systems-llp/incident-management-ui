@@ -74,3 +74,8 @@ export async function updateEvidenceReference(id, payload) {
   const response = await apiClient.post(`/api/incidents/${id}/evidence`, payload)
   return response.data
 }
+
+export async function submitResolutionFeedback(id, payload) {
+  const response = await apiClient.post(`/api/incidents/${id}/resolution-feedback`, payload)
+  return response.data
+}
