@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getCurrentUser, initializeCsrf, logout as logoutRequest } from '../api/auth'
 import { backendBaseUrl } from '../api/client'
 import AuthContext from './AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 function AuthProvider({ children }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -35,7 +37,8 @@ function AuthProvider({ children }) {
     await logoutRequest()
     setUser(null)
     setError('')
-  }, [])
+    navigate('/login', { replace: true })
+  }, [navigate])
 
   const value = useMemo(() => ({ user, isAuthenticated: Boolean(user), loading, error, login, logout, refreshUser }), [user, loading, error, login, logout, refreshUser])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
