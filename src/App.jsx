@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import AuthProvider from './auth/AuthProvider'
 import useAuth from './auth/useAuth'
 import AppLayout from './components/AppLayout'
@@ -19,9 +19,11 @@ function App() {
 
 function AuthenticatedApplication() {
   const { isAuthenticated, loading, error, refreshUser } = useAuth()
+  const location = useLocation()
   if (loading) return <AuthLoading />
   if (error) return <AuthFailure onRetry={refreshUser} />
-  if (!isAuthenticated) return <Login />
+  if (!isAuthenticated) return location.pathname === '/login' ? <Login /> : <Navigate to={'/login' + location.search} replace />
+  if (location.pathname === '/login') return <Navigate to={'/'} replace />
   return <Routes><Route element={<AppLayout />}><Route path="/" element={<Dashboard />} /><Route path="/incidents" element={<IncidentList />} /><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/:id" element={<IncidentDetails />} /><Route path="*" element={<NotFound />} /></Route></Routes>
 }
 
