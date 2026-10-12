@@ -3,7 +3,7 @@ const stages = [
   ['Assignment', 'The incident is assigned to the responsible IT handler.'],
   ['Investigation', 'The handler investigates the issue and records findings, root cause, and actions taken.'],
   ['Resolution', 'The handler applies and records the final fix.'],
-  ['Validation', 'The reviewer verifies that the resolution is effective.'],
+  ['Validation', 'The original reporter tests the fix and validates that the resolution is effective.'],
   ['Closure', 'The original reporter confirms the issue is resolved and closes the incident.'],
 ]
 
@@ -17,7 +17,7 @@ export default function IncidentLifecycleGuide() {
           <p className="small text-secondary mb-0">{description}</p>
         </li>)}
       </ol>
-      <p className="small text-secondary border-top pt-2 mb-0">After closure, a review may capture lessons learned and preventive actions.</p>
+      <p className="small text-secondary border-top pt-2 mb-0">After closure, REVIEWER or ADMIN may review the incident once to capture lessons learned and preventive actions. The incident remains CLOSED.</p>
     </div>
   </aside>
 }

@@ -4,6 +4,7 @@ import { getIncidents } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import ApiState from '../components/ApiState'
 import { SeverityBadge, StatusBadge } from '../components/IncidentBadges'
+import MonthlyReport from '../components/MonthlyReport'
 import PageTitle from '../components/PageTitle'
 import { formatDate, getErrorMessage, labelize, readField } from '../utils/incident'
 
@@ -40,6 +41,7 @@ function IncidentList() {
   return (
     <>
       <PageTitle title="Incidents" description="Search and review reported incidents." actions={['REPORTER', 'ADMIN'].includes(user.role) ? <Link className="btn btn-primary" to="/incidents/new">Create Incident</Link> : null} />
+      {['IT_HANDLER', 'ADMIN'].includes(user.role) && <MonthlyReport />}
       {state === 'loading' && <ApiState type="loading" />}
       {state === 'error' && <ApiState type="error" message={error} onRetry={loadIncidents} />}
       {state === 'ready' && <>

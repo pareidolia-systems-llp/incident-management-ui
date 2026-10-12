@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+import { helpFieldLinks } from '../utils/portalHelp'
 import { fieldGuidance, remarksGuidance } from '../utils/incidentGuidance'
 
 export default function FieldGuidance({ name, id, label, actionKey }) {
@@ -10,5 +12,6 @@ export default function FieldGuidance({ name, id, label, actionKey }) {
       <summary>Example<span className="visually-hidden"> for {label}</span></summary>
       <div className="mt-1">{guidance.example}</div>
     </details>}
+    {helpFieldLinks[name] && <Link aria-label={`Learn more about ${label}`} className="d-inline-block mt-1" to={`/help#${helpFieldLinks[name]}`}>Learn more<span className="visually-hidden"> about {label}</span></Link>}
   </div>
 }

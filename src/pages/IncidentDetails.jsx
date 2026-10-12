@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import IncidentAttachments from '../components/IncidentAttachments'
+import ImagePicker from '../components/ImagePicker'
+import { uploadAttachments } from '../api/attachments'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, reclassifyIncident, resolveIncident, reviewIncident, submitResolutionFeedback, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import ApiState from '../components/ApiState'
@@ -47,6 +50,7 @@ function field(name, label, required = false, type = 'text', options = []) { ret
 
 function IncidentDetails() {
   const { id } = useParams()
+  const location = useLocation()
   const { user } = useAuth()
   const [incident, setIncident] = useState(null)
   const [history, setHistory] = useState([])
@@ -60,6 +64,9 @@ function IncidentDetails() {
   const [actionErrors, setActionErrors] = useState({})
   const [actionError, setActionError] = useState('')
   const [savingAction, setSavingAction] = useState(false)
+  const [actionFiles, setActionFiles] = useState([])
+  const [attachmentVersion, setAttachmentVersion] = useState(0)
+  const [evidenceUploadWarning, setEvidenceUploadWarning] = useState('')
 
   const loadIncident = useCallback(async () => {
     setState('loading')
@@ -75,13 +82,14 @@ function IncidentDetails() {
   function openAction(actionKey) {
     const action = actionDefinitions[actionKey]
     setActionValues(initialActionValues(action, incident))
+    setActionFiles([])
     setActionErrors({})
     setActionError('')
     setActiveAction(actionKey)
   }
 
   function closeAction() {
-    if (!savingAction) { setActiveAction(null); setActionValues({}); setActionErrors({}); setActionError('') }
+    if (!savingAction) { setActiveAction(null); setActionValues({}); setActionFiles([]); setActionErrors({}); setActionError('') }
   }
 
   function updateActionValue(event) {
@@ -102,8 +110,19 @@ function IncidentDetails() {
     setActionErrors({})
     try {
       await action.submit(id, createPayload(action, actionValues))
+      if (activeAction === 'evidence') {
+        setEvidenceUploadWarning('')
+        if (actionFiles.length) {
+          try { await uploadAttachments(id, actionFiles) }
+          catch {
+            setEvidenceUploadWarning('Evidence was updated successfully, but one or more screenshots could not be uploaded. Please upload them later using the Attachments section.')
+          }
+        }
+      }
+      if (activeAction === 'evidence') setAttachmentVersion((current) => current + 1)
       setActiveAction(null)
       setActionValues({})
+      setActionFiles([])
       await loadIncident()
     } catch (requestError) {
       setActionErrors(getActionFieldErrors(requestError, action))
@@ -114,7 +133,7 @@ function IncidentDetails() {
   }
 
   if (state === 'loading') return <><PageTitle title="Incident Details" /><ApiState type="loading" /></>
-  if (state === 'error') return <><PageTitle title={accessDenied ? 'Access denied' : 'Incident Details'} /><ApiState type="error" message={error} onRetry={loadIncident} /></>
+  if (state === 'error') return <><PageTitle title={accessDenied ? 'Access denied' : 'Incident Details'} />{evidenceUploadWarning && <div className="alert alert-warning" role="alert">{evidenceUploadWarning}</div>}<ApiState type="error" message={error} onRetry={loadIncident} /></>
 
   const reviewCompleted = incident.status === 'CLOSED' && hasRecordedValue(incident.reviewedAt)
   const canPerformOperationalActions = ['IT_HANDLER', 'ADMIN'].includes(user.role)
@@ -125,10 +144,16 @@ function IncidentDetails() {
     <>
       <PageTitle title={incident.incidentNumber || 'Incident Details'} description={incident.title} actions={<Link className="btn btn-outline-secondary" to="/incidents">Back to Incidents</Link>} />
       <div className="d-flex flex-wrap gap-2 mb-3"><StatusBadge status={incident.status} /><SeverityBadge severity={incident.severity} /></div>
+      {location.state?.uploadWarning && <div className="alert alert-warning" role="alert">{location.state.uploadWarning}</div>}
+      {evidenceUploadWarning && <div className="alert alert-warning" role="alert">{evidenceUploadWarning}</div>}
       <ActionsPanel actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} />
       <div className="row g-3 mb-4">{sections.map((section) => <DetailSection key={section.title} section={section} incident={incident} />)}</div>
+      <IncidentAttachments key={`${id}-${attachmentVersion}`} incidentId={id} canUpload={['REPORTER', 'IT_HANDLER', 'ADMIN'].includes(user.role)} onUploaded={async () => {
+        try { setHistory(await getIncidentHistory(id)); setHistoryState('ready') }
+        catch { setHistoryError('Screenshots were uploaded, but audit history could not be refreshed.'); setHistoryState('error') }
+      }} />
       <AuditTrail history={history} state={historyState} error={historyError} onRetry={loadIncident} />
-      {activeAction && <ActionModal actionKey={activeAction} action={actionDefinitions[activeAction]} user={user} values={actionValues} errors={actionErrors} error={actionError} saving={savingAction} onChange={updateActionValue} onClose={closeAction} onSubmit={submitAction} />}
+      {activeAction && <ActionModal actionKey={activeAction} action={actionDefinitions[activeAction]} user={user} values={actionValues} errors={actionErrors} error={actionError} saving={savingAction} files={actionFiles} onFilesChange={setActionFiles} onChange={updateActionValue} onClose={closeAction} onSubmit={submitAction} />}
     </>
   )
 }
@@ -158,8 +183,8 @@ function ActionsPanel({ actionKeys, operationalActionKeys: activeOperationalActi
   </section>
 }
 
-function ActionModal({ actionKey, action, user, values, errors, error, saving, onChange, onClose, onSubmit }) {
-  return <><div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title"><div className="modal-dialog modal-lg modal-dialog-scrollable"><form className="modal-content" noValidate onSubmit={onSubmit}><div className="modal-header"><h2 className="modal-title fs-5" id="action-modal-title">{action.label}</h2><button type="button" className="btn-close" aria-label="Close" onClick={onClose} disabled={saving} /></div><div className="modal-body"><p className="small text-secondary">{actionGuidance[actionKey]}</p>{error && <div className="alert alert-danger" role="alert">{error}</div>}<p className="small text-secondary">Action will be recorded as {user.email}.</p><div className="row g-3">{action.fields.map((item) => <ActionField key={item.name} actionKey={actionKey} field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />)}</div></div><div className="modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={saving}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{saving ? 'Saving…' : action.submitLabel}</button></div></form></div></div><div className="modal-backdrop show" /></>
+function ActionModal({ actionKey, action, user, values, errors, error, saving, files, onFilesChange, onChange, onClose, onSubmit }) {
+  return <><div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title"><div className="modal-dialog modal-lg modal-dialog-scrollable"><form className="modal-content" noValidate onSubmit={onSubmit}><div className="modal-header"><h2 className="modal-title fs-5" id="action-modal-title">{action.label}</h2><button type="button" className="btn-close" aria-label="Close" onClick={onClose} disabled={saving} /></div><div className="modal-body"><p className="small text-secondary">{actionGuidance[actionKey]}</p>{error && <div className="alert alert-danger" role="alert">{error}</div>}<p className="small text-secondary">Action will be recorded as {user.email}.</p><div className="row g-3">{action.fields.map((item) => <ActionField key={item.name} actionKey={actionKey} field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />)}</div>{actionKey === 'evidence' && <div className="mt-3"><ImagePicker files={files} onChange={onFilesChange} disabled={saving} /></div>}</div><div className="modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={saving}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{saving ? 'Saving…' : action.submitLabel}</button></div></form></div></div><div className="modal-backdrop show" /></>
 }
 
 function ActionField({ field: item, value, error, onChange, actionKey }) {

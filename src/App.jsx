@@ -6,6 +6,7 @@ import CreateIncident from './pages/CreateIncident'
 import Dashboard from './pages/Dashboard'
 import IncidentDetails from './pages/IncidentDetails'
 import IncidentList from './pages/IncidentList'
+import Help from './pages/Help'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 
@@ -24,7 +25,7 @@ function AuthenticatedApplication() {
   if (error) return <AuthFailure onRetry={refreshUser} />
   if (!isAuthenticated) return location.pathname === '/login' ? <Login /> : <Navigate to={'/login' + location.search} replace />
   if (location.pathname === '/login') return <Navigate to={'/'} replace />
-  return <Routes><Route element={<AppLayout />}><Route path="/" element={<Dashboard />} /><Route path="/incidents" element={<IncidentList />} /><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/:id" element={<IncidentDetails />} /><Route path="*" element={<NotFound />} /></Route></Routes>
+  return <Routes><Route element={<AppLayout />}><Route path="/" element={<Dashboard />} /><Route path="/incidents" element={<IncidentList />} /><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/:id" element={<IncidentDetails />} /><Route path="/help" element={<Help />} /><Route path="*" element={<NotFound />} /></Route></Routes>
 }
 
 function AuthLoading() { return <main className="login-page d-flex align-items-center justify-content-center p-4"><div className="text-center text-secondary"><div className="spinner-border text-primary mb-3" role="status" /><div>Checking your sign-in status…</div></div></main> }

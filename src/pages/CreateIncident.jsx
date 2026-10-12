@@ -1,5 +1,8 @@
+import { issueTypes, reporterDepartments, issueTypeGuide, levels, categoriesByIssueType } from '../utils/incidentOptions'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ImagePicker from '../components/ImagePicker'
+import { uploadAttachments } from '../api/attachments'
 import { createIncident } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import PageTitle from '../components/PageTitle'
@@ -13,27 +16,10 @@ const initialValues = {
 }
 
 const requiredFields = ['title', 'description', 'issueType', 'category', 'severity', 'priority', 'affectedSystem']
-const issueTypes = ['IT_ISSUE', 'SERVICE_REQUEST', 'SUSPECTED_SECURITY_INCIDENT', 'INFORMATION_SECURITY_INCIDENT', 'MAJOR_CRITICAL_SECURITY_INCIDENT']
-const reporterDepartments = ['Operations (Annotation)', 'Operations (Perioperative Flow Analysis)', 'HR', 'R&D']
-const issueTypeGuide = {
-  IT_ISSUE: { meaning: 'Something in an application, device, network, or IT service is not working as expected.', example: 'VPN disconnecting or a workstation unable to connect to Wi-Fi.' },
-  SERVICE_REQUEST: { meaning: 'A request for access, setup, installation, or another routine IT service rather than a fault.', example: 'Requesting access to an internal application or requesting software installation.' },
-  SUSPECTED_SECURITY_INCIDENT: { meaning: 'Something appears suspicious but has not yet been confirmed as an information-security incident.', example: 'Unexpected MFA prompts or a suspicious email received by an employee.' },
-  INFORMATION_SECURITY_INCIDENT: { meaning: 'A confirmed security event affecting information, systems, accounts, or access.', example: 'Confirmed unauthorized access to a company account.' },
-  MAJOR_CRITICAL_SECURITY_INCIDENT: { meaning: 'A serious security incident with significant or widespread impact that requires urgent attention.', example: 'Major data exposure or widespread service disruption caused by a cyberattack.' },
-}
-const levels = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
-const categoriesByIssueType = {
-  IT_ISSUE: ['Network / Connectivity', 'Account / Access', 'Hardware', 'Software / Application', 'Email / Collaboration', 'Device / Peripheral', 'Other'],
-  SERVICE_REQUEST: ['Account / Access Request', 'Software Installation', 'Hardware Request', 'Permission / Access Change', 'General IT Request', 'Other'],
-  SUSPECTED_SECURITY_INCIDENT: ['Phishing / Suspicious Email', 'Suspicious Login / Account Activity', 'Malware / Suspicious File', 'Unauthorized Access', 'Data Leakage / Exposure', 'Lost / Stolen Device', 'Other'],
-  INFORMATION_SECURITY_INCIDENT: ['Account Compromise', 'Malware', 'Unauthorized Access', 'Data Breach / Exposure', 'Policy Violation', 'Security Control Failure', 'Other'],
-  MAJOR_CRITICAL_SECURITY_INCIDENT: ['Ransomware', 'Major Data Breach', 'Critical System Compromise', 'Privileged Account Compromise', 'Widespread Malware', 'Major Service / Security Outage', 'Other'],
-}
-
 function CreateIncident() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [files, setFiles] = useState([])
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
@@ -72,7 +58,12 @@ function CreateIncident() {
     try {
       const createdIncident = await createIncident(values)
       if (!createdIncident?.id) throw new Error('Missing incident identifier')
-      navigate(`/incidents/${createdIncident.id}`)
+      let uploadWarning = ''
+      if (files.length) {
+        try { await uploadAttachments(createdIncident.id, files) }
+        catch { uploadWarning = 'Incident was created successfully, but the screenshots could not be uploaded. Please add them using the Attachments section below.' }
+      }
+      navigate(`/incidents/${createdIncident.id}`, { state: { uploadWarning } })
     } catch (requestError) {
       const fieldErrors = getBackendFieldErrors(requestError)
       if (Object.keys(fieldErrors).length > 0) setErrors(fieldErrors)
@@ -91,6 +82,7 @@ function CreateIncident() {
         <FormSection title="Incident Details"><div className="row g-3"><TextField label="Title" name="title" required values={values} errors={errors} onChange={handleChange} /><TextField label="Description" name="description" required as="textarea" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <FormSection title="Classification & Priority"><div className="row g-3"><SelectField label="Issue Type" name="issueType" options={issueTypes} required values={values} errors={errors} onChange={handleChange} /><CategoryField issueType={values.issueType} values={values} errors={errors} onChange={handleChange} /><SelectField label="Severity" name="severity" options={levels} required values={values} errors={errors} onChange={handleChange} /><SelectField label="Priority" name="priority" options={levels} required values={values} errors={errors} onChange={handleChange} /></div><IssueTypeGuide /></FormSection>
         <FormSection title="Affected System / Impact"><div className="row g-3"><TextField label="Affected System" name="affectedSystem" required values={values} errors={errors} onChange={handleChange} /><TextField label="Impacted User / Department" name="impactedUserOrDepartment" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
+        <FormSection title="Attachments"><ImagePicker files={files} onChange={setFiles} disabled={submitting} /></FormSection>
         <div className="d-flex flex-wrap justify-content-end gap-2"><button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/incidents')} disabled={submitting}>Cancel</button><button type="submit" className="btn btn-primary" disabled={submitting}>{submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{submitting ? 'Creating Incident…' : 'Create Incident'}</button></div>
       </form>
     </>
