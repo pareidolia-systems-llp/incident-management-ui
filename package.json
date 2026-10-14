@@ -12,6 +12,7 @@
     "test": "node --test src/utils/*.test.js && vitest run"
   },
   "dependencies": {
+    "@grafana/faro-react": "^2.12.1",
     "axios": "^1.20.0",
     "bootstrap": "^5.3.8",
     "react": "^19.2.8",
