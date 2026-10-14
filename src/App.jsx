@@ -10,22 +10,22 @@ import Help from './pages/Help'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 
-function App() {
+function App({ RoutesComponent = Routes }) {
   return (
     <BrowserRouter>
-      <AuthProvider><AuthenticatedApplication /></AuthProvider>
+      <AuthProvider><AuthenticatedApplication RoutesComponent={RoutesComponent} /></AuthProvider>
     </BrowserRouter>
   )
 }
 
-function AuthenticatedApplication() {
+function AuthenticatedApplication({ RoutesComponent }) {
   const { isAuthenticated, loading, error, refreshUser } = useAuth()
   const location = useLocation()
   if (loading) return <AuthLoading />
   if (error) return <AuthFailure onRetry={refreshUser} />
   if (!isAuthenticated) return location.pathname === '/login' ? <Login /> : <Navigate to={'/login' + location.search} replace />
   if (location.pathname === '/login') return <Navigate to={'/'} replace />
-  return <Routes><Route element={<AppLayout />}><Route path="/" element={<Dashboard />} /><Route path="/incidents" element={<IncidentList />} /><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/:id" element={<IncidentDetails />} /><Route path="/help" element={<Help />} /><Route path="*" element={<NotFound />} /></Route></Routes>
+  return <RoutesComponent><Route element={<AppLayout />}><Route path="/" element={<Dashboard />} /><Route path="/incidents" element={<IncidentList />} /><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/:id" element={<IncidentDetails />} /><Route path="/help" element={<Help />} /><Route path="*" element={<NotFound />} /></Route></RoutesComponent>
 }
 
 function AuthLoading() { return <main className="login-page d-flex align-items-center justify-content-center p-4"><div className="text-center text-secondary"><div className="spinner-border text-primary mb-3" role="status" /><div>Checking your sign-in status…</div></div></main> }
