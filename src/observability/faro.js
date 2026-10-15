@@ -61,14 +61,12 @@ export function beforeSend(item) {
 }
 
 export function initializeObservability(env) {
-  // The literal DEV guard also removes the SDK import from production builds.
-  if (!import.meta.env.DEV) return Promise.resolve(null)
   const config = env ?? {
-    DEV: import.meta.env.DEV,
     VITE_FARO_ENABLED: import.meta.env.VITE_FARO_ENABLED,
+    VITE_FARO_ENVIRONMENT: import.meta.env.VITE_FARO_ENVIRONMENT,
     VITE_FARO_COLLECTOR_URL: import.meta.env.VITE_FARO_COLLECTOR_URL,
   }
-  if (config.DEV !== true || config.VITE_FARO_ENABLED !== 'true') return Promise.resolve(null)
+  if (config.VITE_FARO_ENABLED !== 'true') return Promise.resolve(null)
   initialization ??= initialize(config).catch(() => null)
   return initialization
 }
@@ -77,6 +75,8 @@ async function initialize(env) {
   const url = new URL(env.VITE_FARO_COLLECTOR_URL)
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) return null
   const [sdk, router] = await Promise.all([import('@grafana/faro-react'), import('react-router-dom')])
+  // Keep the historical dev fallback; explicit metadata never depends on Vite mode.
+  app.environment = env.VITE_FARO_ENVIRONMENT || 'dev'
   const instance = sdk.initializeFaro({
     app,
     transports: [new sdk.FetchTransport({
