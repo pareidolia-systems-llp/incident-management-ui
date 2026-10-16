@@ -133,10 +133,11 @@ test('cancel clears images and other action modals do not get the picker', async
   const modal = await openEvidence()
   select(modal, [png()])
   fireEvent.click(within(modal).getByRole('button', { name: 'Cancel' }))
+  fireEvent.click(screen.getByText('More Actions'))
   fireEvent.click(screen.getByRole('button', { name: 'Update Evidence Reference' }))
   expect(within(screen.getByRole('dialog')).queryByRole('button', { name: 'Remove error.png' })).toBeNull()
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Update Investigation', exact: true }))
+  fireEvent.click(screen.getByRole('button', { name: 'Resolve Incident', exact: true }))
   expect(within(screen.getByRole('dialog')).queryByLabelText('Screenshots / Supporting Images')).toBeNull()
 })
 test.each(['REPORTER', 'REVIEWER'])('%s does not gain access to the evidence action', async (role) => {

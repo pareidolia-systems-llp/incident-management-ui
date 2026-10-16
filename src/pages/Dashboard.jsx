@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+import usePolling from '../hooks/usePolling'
 import { getIncidents } from '../api/incidents'
 import ApiState from '../components/ApiState'
 import PageTitle from '../components/PageTitle'
 import { getErrorMessage, readField } from '../utils/incident'
 
 const statDefinitions = [
+  { label: 'Issues Still Persisting', value: (items) => items.filter((item) => item.issueStillPersists === true).length, tone: 'danger' },
   { label: 'Total Incidents', value: (items) => items.length, tone: 'primary' },
   { label: 'Open', value: (items) => countStatus(items, 'OPEN'), tone: 'primary' },
   { label: 'Assigned', value: (items) => countStatus(items, 'ASSIGNED'), tone: 'info' },
@@ -27,18 +29,18 @@ function Dashboard() {
   const [state, setState] = useState('loading')
   const [error, setError] = useState('')
 
-  const loadIncidents = useCallback(async () => {
-    setState('loading')
+  const fetchIncidents = useCallback(async (silent, current) => {
+    if (!silent) setState('loading')
     try {
-      setIncidents(await getIncidents())
-      setState('ready')
+      const data = await getIncidents()
+      if (current()) { setIncidents(data); setState('ready') }
     } catch (requestError) {
-      setError(getErrorMessage(requestError))
-      setState('error')
+      if (current() && !silent) { setError(getErrorMessage(requestError)); setState('error') }
     }
   }, [])
+  const refresh = usePolling(fetchIncidents)
+  const loadIncidents = () => refresh()
 
-  useEffect(() => { void Promise.resolve().then(loadIncidents) }, [loadIncidents])
 
   return (
     <>

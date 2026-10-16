@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import usePolling from '../hooks/usePolling'
 import { getIncidents } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import ApiState from '../components/ApiState'
-import { SeverityBadge, StatusBadge } from '../components/IncidentBadges'
+import { AttentionBadge, SeverityBadge, StatusBadge } from '../components/IncidentBadges'
 import MonthlyReport from '../components/MonthlyReport'
 import PageTitle from '../components/PageTitle'
 import { formatDate, getErrorMessage, labelize, readField } from '../utils/incident'
@@ -15,12 +16,18 @@ function IncidentList() {
   const [error, setError] = useState('')
   const [filters, setFilters] = useState({ search: '', status: '', severity: '', issueType: '' })
 
-  const loadIncidents = useCallback(async () => {
-    setState('loading')
-    try { setIncidents(await getIncidents()); setState('ready') } catch (requestError) { setError(getErrorMessage(requestError)); setState('error') }
+  const fetchIncidents = useCallback(async (silent, current) => {
+    if (!silent) setState('loading')
+    try {
+      const data = await getIncidents()
+      if (current()) { setIncidents(data); setState('ready') }
+    } catch (requestError) {
+      if (current() && !silent) { setError(getErrorMessage(requestError)); setState('error') }
+    }
   }, [])
+  const refresh = usePolling(fetchIncidents)
+  const loadIncidents = () => refresh()
 
-  useEffect(() => { void Promise.resolve().then(loadIncidents) }, [loadIncidents])
 
   const choices = useMemo(() => ({
     statuses: uniqueValues(incidents, 'status'),
@@ -53,7 +60,7 @@ function IncidentList() {
         </div></div></div>
         <div className="card section-card incident-table-card overflow-hidden"><div className="card-body p-0">
           {filteredIncidents.length === 0 ? <ApiState type="empty" /> : <div className="table-responsive"><table className="table table-hover mb-0"><thead><tr><th>Incident Number</th><th>Title</th><th>Issue Type</th><th>Severity</th><th>Priority</th><th>Assigned Owner</th><th>Status</th><th>Reported At</th><th className="text-end"> </th></tr></thead><tbody>
-            {filteredIncidents.map((incident) => <tr key={incident.id}><td className="fw-semibold">{readField(incident, 'incidentNumber', 'number') || '—'}</td><td>{readField(incident, 'title') || '—'}</td><td>{labelize(readField(incident, 'issueType', 'issue_type'))}</td><td><SeverityBadge severity={readField(incident, 'severity')} /></td><td>{labelize(readField(incident, 'priority'))}</td><td>{readField(incident, 'assignedOwner', 'assignedTo', 'owner') || 'Unassigned'}</td><td><StatusBadge status={readField(incident, 'status')} /></td><td className="text-nowrap">{formatDate(readField(incident, 'reportedAt', 'createdAt'))}</td><td className="text-end"><Link className="btn btn-sm btn-outline-primary" to={`/incidents/${incident.id}`}>View</Link></td></tr>)}
+            {filteredIncidents.map((incident) => <tr key={incident.id}><td className="fw-semibold">{readField(incident, 'incidentNumber', 'number') || '—'}</td><td>{readField(incident, 'title') || '—'}</td><td>{labelize(readField(incident, 'issueType', 'issue_type'))}</td><td><SeverityBadge severity={readField(incident, 'severity')} /></td><td>{labelize(readField(incident, 'priority'))}</td><td>{readField(incident, 'assignedOwner', 'assignedTo', 'owner') || 'Unassigned'}</td><td><div className="incident-status-badges d-flex flex-wrap gap-1 align-items-start"><StatusBadge status={readField(incident, 'status')} /><AttentionBadge active={incident.issueStillPersists} /></div></td><td className="text-nowrap">{formatDate(readField(incident, 'reportedAt', 'createdAt'))}</td><td className="text-end"><Link className="btn btn-sm btn-outline-primary" to={`/incidents/${incident.id}`}>View</Link></td></tr>)}
           </tbody></table></div>}
         </div></div>
       </>}

@@ -1,15 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
+import usePolling from '../hooks/usePolling'
+import { historyChange, historyActionLabel, historyActorLabel, historyRemarks, isFieldTransition, activityFilters, filterActivity } from '../utils/incidentHistory'
 import IncidentAttachments from '../components/IncidentAttachments'
+import IncidentStatusTracker from '../components/IncidentStatusTracker'
+import { reporterWaitingMessage } from '../utils/incidentLifecycle'
 import ImagePicker from '../components/ImagePicker'
 import { uploadAttachments } from '../api/attachments'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, reclassifyIncident, resolveIncident, reviewIncident, submitResolutionFeedback, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
+import { addWorkNote, assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, reclassifyIncident, resolveIncident, reviewIncident, submitResolutionFeedback, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import ApiState from '../components/ApiState'
 import { SeverityBadge, StatusBadge } from '../components/IncidentBadges'
 import PageTitle from '../components/PageTitle'
 import FieldGuidance from '../components/FieldGuidance'
-import { actionGuidance, guidanceDescription } from '../utils/incidentGuidance'
+import { actionGuidance, guidanceDescription, workActionDescriptions } from '../utils/incidentGuidance'
 import { formatDate, getErrorMessage, labelize } from '../utils/incident'
 import { getLifecycleActions } from '../utils/incidentActions'
 import { resolutionFeedbackFields, validateAction, createPayload } from '../utils/incidentActionForm'
@@ -30,16 +34,17 @@ const issueTypeOptions = ['IT_ISSUE', 'SERVICE_REQUEST', 'SUSPECTED_SECURITY_INC
 const levelOptions = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 
 const actionDefinitions = {
+  workNote: { label: 'Log Work on This Incident', submitLabel: 'Log Work on This Incident', submit: addWorkNote, fields: [{ ...field('remarks', 'Work Note / Observation', true, 'textarea'), maxLength: 8000 }] },
   assign: { label: 'Assign Incident', submitLabel: 'Assign Incident', submit: assignIncident, fields: [field('assignedOwner', 'Assigned Owner', true), field('remarks', 'Remarks', false, 'textarea')] },
-  investigation: { label: 'Update Investigation', submitLabel: 'Save Investigation', submit: updateInvestigation, prefill: ['investigationDetails', 'rootCause', 'actionsTaken', 'containmentAction', 'correctiveAction'], fields: [field('investigationDetails', 'Investigation Details', false, 'textarea'), field('rootCause', 'Root Cause', false, 'textarea'), field('actionsTaken', 'Actions Taken', false, 'textarea'), field('containmentAction', 'Containment Action', false, 'textarea'), field('correctiveAction', 'Corrective Action', false, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
-  resolve: { label: 'Resolve Incident', submitLabel: 'Resolve Incident', submit: resolveIncident, fields: [field('resolutionDetails', 'Resolution Details', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
+  investigation: { label: 'Record Investigation', submitLabel: 'Save Investigation Findings', submit: updateInvestigation, prefill: ['investigationDetails', 'rootCause', 'actionsTaken', 'containmentAction', 'correctiveAction'], fields: [field('investigationDetails', 'Investigation Details', false, 'textarea'), field('rootCause', 'Root Cause', false, 'textarea'), field('actionsTaken', 'Actions Taken', false, 'textarea'), field('containmentAction', 'Containment Action', false, 'textarea'), field('correctiveAction', 'Corrective Action', false, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
+  resolve: { label: 'Resolve Incident', submitLabel: 'Resolve Incident', submit: resolveIncident, fields: [field('resolutionDetails', 'Resolution Details / Summary', true, 'textarea'), field('remarks', 'Resolution Notes', false, 'textarea')] },
   validate: { label: 'Validate Incident', submitLabel: 'Validate Incident', submit: validateIncident, fields: [field('validationDetails', 'Validation Details', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
   resolutionFeedback: { label: 'Issue Still Persists', submitLabel: 'Issue Still Persists', submit: submitResolutionFeedback, fields: resolutionFeedbackFields },
   close: { label: 'Close Incident', submitLabel: 'Close Incident', submit: closeIncident, fields: [field('remarks', 'Remarks', false, 'textarea')] },
   review: { label: 'Review Incident', submitLabel: 'Save Review', submit: reviewIncident, fields: [field('reviewDetails', 'Review Details', true, 'textarea'), field('lessonsLearned', 'Lessons Learned', false, 'textarea'), field('preventiveAction', 'Preventive Action', false, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
   reclassify: { label: 'Reclassify Incident', submitLabel: 'Update Classification', submit: reclassifyIncident, prefill: ['issueType'], fields: [field('issueType', 'Issue Type', true, 'select', issueTypeOptions), field('remarks', 'Remarks', false, 'textarea')] },
-  severity: { label: 'Change Severity', submitLabel: 'Update Severity', submit: changeIncidentSeverity, prefill: ['severity'], fields: [field('severity', 'Severity', true, 'select', levelOptions), field('remarks', 'Remarks', false, 'textarea')] },
-  priority: { label: 'Change Priority', submitLabel: 'Update Priority', submit: changeIncidentPriority, prefill: ['priority'], fields: [field('priority', 'Priority', true, 'select', levelOptions), field('remarks', 'Remarks', false, 'textarea')] },
+  severity: { label: 'Reassess Severity', submitLabel: 'Update Severity', submit: changeIncidentSeverity, prefill: ['severity'], fields: [field('severity', 'New severity', true, 'select', levelOptions), { ...field('remarks', 'Reason for reassessment', true, 'textarea'), maxLength: 65535 }] },
+  priority: { label: 'Reassess Priority', submitLabel: 'Update Priority', submit: changeIncidentPriority, prefill: ['priority'], fields: [field('priority', 'New priority', true, 'select', levelOptions), { ...field('remarks', 'Reason for reassessment', true, 'textarea'), maxLength: 65535 }] },
   escalate: { label: 'Escalate Incident', submitLabel: 'Escalate Incident', submit: escalateIncident, fields: [field('escalationDetails', 'Escalation Details', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
   evidence: { label: 'Update Evidence Reference', submitLabel: 'Update Evidence', submit: updateEvidenceReference, fields: [field('evidenceReference', 'Evidence Reference', true, 'textarea'), field('remarks', 'Remarks', false, 'textarea')] },
 }
@@ -68,16 +73,17 @@ function IncidentDetails() {
   const [attachmentVersion, setAttachmentVersion] = useState(0)
   const [evidenceUploadWarning, setEvidenceUploadWarning] = useState('')
 
-  const loadIncident = useCallback(async () => {
-    setState('loading')
-    setHistoryState('loading')
-    setAccessDenied(false)
+  const fetchIncident = useCallback(async (silent, current) => {
+    if (!silent) { setState('loading'); setHistoryState('loading'); setAccessDenied(false) }
     const [incidentResult, historyResult] = await Promise.allSettled([getIncident(id), getIncidentHistory(id)])
-    if (incidentResult.status === 'fulfilled') { setIncident(incidentResult.value); setState('ready') } else { setAccessDenied(incidentResult.reason.response?.status === 403); setError(getErrorMessage(incidentResult.reason)); setState('error') }
-    if (historyResult.status === 'fulfilled') { setHistory(historyResult.value); setHistoryState('ready') } else { setHistoryError(getErrorMessage(historyResult.reason, 'We could not load the audit history. Please try again.')); setHistoryState('error') }
+    if (!current()) return
+    if (incidentResult.status === 'fulfilled') { setIncident(incidentResult.value); setState('ready') }
+    else if (!silent) { setAccessDenied(incidentResult.reason.response?.status === 403); setError(getErrorMessage(incidentResult.reason)); setState('error') }
+    if (historyResult.status === 'fulfilled') { setHistory(historyResult.value); setHistoryState('ready') }
+    else if (!silent) { setHistoryError(getErrorMessage(historyResult.reason, 'We could not load the activity history. Please try again.')); setHistoryState('error') }
   }, [id])
-
-  useEffect(() => { void Promise.resolve().then(loadIncident) }, [loadIncident])
+  const refresh = usePolling(fetchIncident, !activeAction && !savingAction)
+  const loadIncident = () => refresh()
 
   function openAction(actionKey) {
     const action = actionDefinitions[actionKey]
@@ -110,16 +116,16 @@ function IncidentDetails() {
     setActionErrors({})
     try {
       await action.submit(id, createPayload(action, actionValues))
-      if (activeAction === 'evidence') {
+      if (['evidence', 'investigation', 'resolutionFeedback'].includes(activeAction)) {
         setEvidenceUploadWarning('')
         if (actionFiles.length) {
           try { await uploadAttachments(id, actionFiles) }
           catch {
-            setEvidenceUploadWarning('Evidence was updated successfully, but one or more screenshots could not be uploaded. Please upload them later using the Attachments section.')
+            setEvidenceUploadWarning(activeAction === 'resolutionFeedback' ? 'Your feedback was saved and the incident is In Progress, but one or more screenshots could not be uploaded. Please retry them using the Attachments section.' : `${activeAction === 'investigation' ? 'Investigation' : 'Evidence'} was updated successfully, but one or more screenshots could not be uploaded. Please upload them later using the Attachments section.`)
           }
         }
       }
-      if (activeAction === 'evidence') setAttachmentVersion((current) => current + 1)
+      if (['evidence', 'investigation', 'resolutionFeedback'].includes(activeAction)) setAttachmentVersion((current) => current + 1)
       setActiveAction(null)
       setActionValues({})
       setActionFiles([])
@@ -138,53 +144,89 @@ function IncidentDetails() {
   const reviewCompleted = incident.status === 'CLOSED' && hasRecordedValue(incident.reviewedAt)
   const canPerformOperationalActions = ['IT_HANDLER', 'ADMIN'].includes(user.role)
   const canPerformReviewActions = ['REVIEWER', 'ADMIN'].includes(user.role)
-  const availableActions = getLifecycleActions(incident, user)
+  const availableActions = [...getLifecycleActions(incident, user), ...(canPerformOperationalActions && incident.status !== 'CLOSED' ? ['workNote'] : [])]
   const availableOperationalActions = incident.status === 'CLOSED' || !canPerformOperationalActions ? [] : operationalActionKeys
   return (
     <>
       <PageTitle title={incident.incidentNumber || 'Incident Details'} description={incident.title} actions={<Link className="btn btn-outline-secondary" to="/incidents">Back to Incidents</Link>} />
       <div className="d-flex flex-wrap gap-2 mb-3"><StatusBadge status={incident.status} /><SeverityBadge severity={incident.severity} /></div>
+      {incident.issueStillPersists && <div className="alert alert-warning" role="status">
+        <h2 className="h6">Issue reported as still unresolved</h2>
+        <p>The reporter confirmed that the previous resolution did not fix the issue. The incident has returned to IT for further investigation.</p>
+        <div>Reported by: {incident.issueStillPersistsReportedBy}</div>
+        <div>Reported at: {formatDate(incident.issueStillPersistsAt)}</div>
+      </div>}
       {location.state?.uploadWarning && <div className="alert alert-warning" role="alert">{location.state.uploadWarning}</div>}
       {evidenceUploadWarning && <div className="alert alert-warning" role="alert">{evidenceUploadWarning}</div>}
-      <ActionsPanel actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} />
-      <div className="row g-3 mb-4">{sections.map((section) => <DetailSection key={section.title} section={section} incident={incident} />)}</div>
-      <IncidentAttachments key={`${id}-${attachmentVersion}`} incidentId={id} canUpload={['REPORTER', 'IT_HANDLER', 'ADMIN'].includes(user.role)} onUploaded={async () => {
-        try { setHistory(await getIncidentHistory(id)); setHistoryState('ready') }
-        catch { setHistoryError('Screenshots were uploaded, but audit history could not be refreshed.'); setHistoryState('error') }
-      }} />
+      <IncidentStatusTracker incident={incident} />
+      <ActionsPanel operational={canPerformOperationalActions} waitingMessage={user.role === 'REPORTER' ? reporterWaitingMessage(incident) : null} actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} />
       <AuditTrail history={history} state={historyState} error={historyError} onRetry={loadIncident} />
-      {activeAction && <ActionModal actionKey={activeAction} action={actionDefinitions[activeAction]} user={user} values={actionValues} errors={actionErrors} error={actionError} saving={savingAction} files={actionFiles} onFilesChange={setActionFiles} onChange={updateActionValue} onClose={closeAction} onSubmit={submitAction} />}
+      <div className="row g-3 mb-4">{sections.map((section) => <DetailSection key={section.title} section={section} incident={incident} />)}</div>
+      <IncidentAttachments key={`${id}-${attachmentVersion}`} incidentId={id} canUpload={['REPORTER', 'IT_HANDLER', 'ADMIN'].includes(user.role)} onUploaded={() => refresh(true, false)} />
+      {activeAction && <ActionModal currentAssessment={incident[activeAction]} actionKey={activeAction} action={actionDefinitions[activeAction]} user={user} values={actionValues} errors={actionErrors} error={actionError} saving={savingAction} files={actionFiles} onFilesChange={setActionFiles} onChange={updateActionValue} onClose={closeAction} onSubmit={submitAction} />}
     </>
   )
 }
 
-function ActionsPanel({ actionKeys, operationalActionKeys: activeOperationalActions, reviewCompleted, onOpen }) {
-  return <section className="card section-card action-panel mb-4">
-    <div className="card-body d-sm-flex align-items-center justify-content-between gap-3">
-      <div><h2 className="h6 text-dark mb-1">Actions</h2><p className="text-secondary small mb-0">Available actions for the current incident status.</p></div>
-      <div className="d-flex flex-wrap align-items-center gap-2 mt-3 mt-sm-0">
-        {actionKeys.map((key) => key === 'assign' ? <div key={key} className="assignment-guidance">
+function ActionsPanel({ operational, waitingMessage, actionKeys, operationalActionKeys: activeOperationalActions, reviewCompleted, onOpen }) {
+  const primaryOrder = ['investigation', 'workNote', 'resolve']
+  const orderedActions = operational ? [...primaryOrder.filter((key) => actionKeys.includes(key)), ...actionKeys.filter((key) => !primaryOrder.includes(key))] : actionKeys
+  return <section className={`card section-card action-panel mb-3${operational ? ' work-on-incident' : ''}`} aria-labelledby="incident-actions-title">
+    <div className="card-body">
+      <h2 className="h5 text-dark mb-2" id="incident-actions-title">{operational ? 'Work on Incident' : 'Actions'}</h2>
+      {!operational && <p className="text-secondary small mb-0">Available actions for the current incident status.</p>}
+      <div className="incident-action-grid mt-3">
+        {orderedActions.map((key) => key === 'assign' ? <div key={key} className="assignment-guidance">
           <button className="btn btn-primary btn-sm" aria-describedby="assign-action-help" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>
           <p id="assign-action-help" className="small text-secondary mt-1 mb-0">{actionGuidance[key]}</p>
+        </div> : operational && workActionDescriptions[key] ? <div className="work-action" key={key}>
+          <button className="btn btn-primary btn-sm" aria-describedby={`work-${key}-help`} onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>
+          <p className="small text-secondary mt-1 mb-0" id={`work-${key}-help`}>{workActionDescriptions[key]}</p>
         </div> : <button key={key} className="btn btn-primary btn-sm" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>)}
         {reviewCompleted && <span className="text-secondary small">Review completed</span>}
-        {activeOperationalActions.length > 0 && <details className="more-actions align-self-end">
+        {activeOperationalActions.length > 0 && <details className="more-actions align-self-start" onKeyDown={(event) => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary').focus() } }} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false }}>
           <summary className="btn btn-outline-secondary btn-sm">More Actions</summary>
           <div className="more-actions-menu border rounded bg-white shadow-sm p-2 mt-2">
-            {activeOperationalActions.map((key) => <button key={key} className="btn btn-sm btn-light text-start w-100 py-2" aria-labelledby={`action-${key}-label`} aria-describedby={`action-${key}-help`} onClick={() => onOpen(key)}>
+            {activeOperationalActions.map((key) => <button key={key} className="btn btn-sm btn-light text-start w-100 py-2" aria-labelledby={`action-${key}-label`} aria-describedby={`action-${key}-help`} onClick={(event) => { event.currentTarget.closest('details').open = false; onOpen(key) }}>
               <span id={`action-${key}-label`} className="d-block fw-semibold">{actionDefinitions[key].label}</span>
               <span id={`action-${key}-help`} className="d-block small text-secondary fw-normal">{actionGuidance[key]}</span>
             </button>)}
           </div>
         </details>}
-        {!actionKeys.length && !reviewCompleted && !activeOperationalActions.length && <span className="text-secondary small">No lifecycle actions are available.</span>}
+        {!actionKeys.length && !reviewCompleted && !activeOperationalActions.length && <div className="text-secondary small">{waitingMessage ? waitingMessage.map((line) => <p className="mb-1" key={line}>{line}</p>) : 'No lifecycle actions are available.'}</div>}
       </div>
+      {operational && <p className="small text-secondary mt-3 mb-0">Updates, work notes and lifecycle actions are recorded in the <a href="#incident-activity">Activity &amp; Work Log</a> below.</p>}
     </div>
   </section>
 }
 
-function ActionModal({ actionKey, action, user, values, errors, error, saving, files, onFilesChange, onChange, onClose, onSubmit }) {
-  return <><div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title"><div className="modal-dialog modal-lg modal-dialog-scrollable"><form className="modal-content" noValidate onSubmit={onSubmit}><div className="modal-header"><h2 className="modal-title fs-5" id="action-modal-title">{action.label}</h2><button type="button" className="btn-close" aria-label="Close" onClick={onClose} disabled={saving} /></div><div className="modal-body"><p className="small text-secondary">{actionGuidance[actionKey]}</p>{error && <div className="alert alert-danger" role="alert">{error}</div>}<p className="small text-secondary">Action will be recorded as {user.email}.</p><div className="row g-3">{action.fields.map((item) => <ActionField key={item.name} actionKey={actionKey} field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />)}</div>{actionKey === 'evidence' && <div className="mt-3"><ImagePicker files={files} onChange={onFilesChange} disabled={saving} /></div>}</div><div className="modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={saving}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{saving ? 'Saving…' : action.submitLabel}</button></div></form></div></div><div className="modal-backdrop show" /></>
+function ActionModal({ currentAssessment, actionKey, action, user, values, errors, error, saving, files, onFilesChange, onChange, onClose, onSubmit }) {
+  const investigation = actionKey === 'investigation'
+  const mainFields = investigation ? action.fields.filter((item) => ['investigationDetails', 'actionsTaken'].includes(item.name)) : action.fields
+  const additionalFields = investigation ? action.fields.filter((item) => !['investigationDetails', 'actionsTaken'].includes(item.name)) : []
+  const renderField = (item) => <ActionField key={item.name} actionKey={actionKey} field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />
+  return <>
+    <div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title">
+      <div className="modal-dialog modal-lg modal-dialog-scrollable">
+        <form className="modal-content" noValidate onSubmit={onSubmit}>
+          <div className="modal-header"><h2 className="modal-title fs-5" id="action-modal-title">{action.label}</h2><button type="button" className="btn-close" aria-label="Close" onClick={onClose} disabled={saving} /></div>
+          <div className="modal-body">
+            <p className="small text-secondary">{actionGuidance[actionKey]}</p>
+            {error && <div className="alert alert-danger" role="alert">{error}</div>}
+            <p className="small text-secondary">Action will be recorded as {user.email}.</p>
+            <div className="row g-3">{['severity', 'priority'].includes(actionKey) && <p className="mb-0">Current {actionKey}: <strong>{currentAssessment || 'Not recorded'}</strong></p>}{mainFields.map(renderField)}</div>
+            {['evidence', 'investigation', 'resolutionFeedback'].includes(actionKey) && <div className="mt-3"><ImagePicker label={actionKey === 'resolutionFeedback' ? 'Supporting Screenshots' : undefined} files={files} onChange={onFilesChange} disabled={saving} /></div>}
+            {investigation && <details className="mt-3" open={additionalFields.some((item) => Boolean(errors[item.name])) || undefined}>
+              <summary className="small fw-semibold">Additional investigation details</summary>
+              <div className="row g-3 mt-1">{additionalFields.map(renderField)}</div>
+            </details>}
+          </div>
+          <div className="modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={saving}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{saving ? 'Saving…' : action.submitLabel}</button></div>
+        </form>
+      </div>
+    </div>
+    <div className="modal-backdrop show" />
+  </>
 }
 
 function ActionField({ field: item, value, error, onChange, actionKey }) {
@@ -197,11 +239,45 @@ function DetailSection({ section, incident }) { return <section className="col-1
 function DetailField({ fieldName, label, value, format }) { const displayValue = format === 'date' ? formatDate(value) : format === 'label' ? labelize(value) : format === 'boolean' ? formatBoolean(value) : value || 'Not recorded'; return <><dt className="col-sm-5 detail-label mb-1 mb-sm-3">{label}</dt><dd className="col-sm-7 detail-value mb-3">{format === 'status' ? <StatusBadge status={value} /> : format === 'severity' ? <SeverityBadge severity={value} /> : displayValue}{fieldName === 'escalationRequired' && <FieldGuidance name={fieldName} id={`detail-${fieldName}`} label={label} />}</dd></> }
 
 function AuditTrail({ history, state, error, onRetry }) {
-  const chronologicalHistory = useMemo(() => [...history].sort((first, second) => toTimestamp(first.changedAt) - toTimestamp(second.changedAt)), [history])
-  return <section className="card section-card"><div className="card-body"><h2 className="h5 text-dark mb-1">Audit Trail</h2><p className="text-secondary small mb-4">Chronological record of incident changes.</p>{state === 'loading' && <ApiState type="loading" />}{state === 'error' && <ApiState type="error" message={error} onRetry={onRetry} />}{state === 'ready' && (chronologicalHistory.length === 0 ? <div className="text-secondary py-3">No audit history has been recorded.</div> : <ol className="audit-timeline list-unstyled mb-0">{chronologicalHistory.map((entry) => <AuditEntry key={entry.id} entry={entry} />)}</ol>)}</div></section>
+  const [filter, setFilter] = useState('All')
+  const [expanded, setExpanded] = useState(false)
+  const chronologicalHistory = filterActivity(history, filter)
+  const visibleHistory = expanded ? chronologicalHistory : chronologicalHistory.slice(-5)
+  return <section className="card section-card mb-4" id="incident-activity" aria-labelledby="incident-activity-title">
+    <div className="card-body">
+      <h2 className="h5 text-dark mb-1" id="incident-activity-title">Activity &amp; Work Log</h2>
+      <p className="text-secondary small mb-3">Chronological record of incident changes and work notes.</p>
+      <div className="d-flex flex-wrap gap-2 mb-3" role="group" aria-label="Filter activity">
+        {activityFilters.map((item) => <button key={item} type="button" className={`btn btn-sm ${filter === item ? 'btn-primary' : 'btn-outline-secondary'}`} aria-pressed={filter === item} onClick={() => { setFilter(item); setExpanded(false) }}>{item}</button>)}
+      </div>
+      {state === 'loading' && <ApiState type="loading" />}
+      {state === 'error' && <ApiState type="error" message={error} onRetry={onRetry} />}
+      {state === 'ready' && (chronologicalHistory.length === 0
+        ? <div className="text-secondary py-3">{history.length === 0 ? 'No audit history has been recorded.' : 'No activity matches this filter.'}</div>
+        : <ol id="activity-entries" className="audit-timeline list-unstyled mb-0">{visibleHistory.map((entry) => <AuditEntry key={entry.id} entry={entry} />)}</ol>)}
+      {state === 'ready' && chronologicalHistory.length > 5 && <div className="d-flex flex-wrap align-items-center gap-3 mt-3"><button className="btn btn-outline-secondary btn-sm" aria-expanded={expanded} aria-controls="activity-entries" onClick={() => setExpanded(!expanded)}>{expanded ? 'Show recent activity' : 'View full activity'}</button><span className="small text-secondary">Showing {visibleHistory.length} of {chronologicalHistory.length} matching entries</span></div>}
+    </div>
+  </section>
 }
 
-function AuditEntry({ entry }) { const hasValueChange = hasValue(entry.oldValue) || hasValue(entry.newValue); return <li className="audit-timeline-item"><div className="d-sm-flex justify-content-between gap-3"><div className="fw-semibold text-dark">{actionLabel(entry.actionType)}</div><time className="text-secondary small text-nowrap">{formatDate(entry.changedAt)}</time></div><div className="text-secondary small mt-1">Changed by {entry.changedBy || 'Not recorded'}</div>{hasValueChange && <div className="audit-value-change mt-2"><span>{displayHistoryValue(entry.oldValue)}</span><span className="mx-2 text-secondary">→</span><span>{displayHistoryValue(entry.newValue)}</span></div>}{entry.remarks && <div className="mt-2 small"><span className="fw-semibold">Remarks:</span> {entry.remarks}</div>}</li> }
+function AuditEntry({ entry }) {
+  const change = historyChange(entry)
+  const remarks = historyRemarks(entry)
+  return <li className="audit-timeline-item">
+    <div className="audit-entry-heading">
+      <div className="fw-semibold text-dark">{historyActionLabel(entry.actionType)}</div>
+      <time className="text-secondary small audit-time">{formatDate(entry.changedAt)}</time>
+    </div>
+    <div className="audit-actor text-secondary small mt-1">{historyActorLabel(entry.actionType)} {entry.changedBy || 'Actor unavailable'}</div>
+    {change && <div className={isFieldTransition(entry.actionType) ? 'audit-value-change mt-2' : 'audit-summary small mt-2'} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{change}</div>}
+    {remarks && <div className="audit-remarks mt-2 small" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+      {remarks.label && <div className="fw-semibold">{remarks.label}</div>}
+      <div>{remarks.text}</div>
+    </div>}
+  </li>
+}
+
+
 
 function initialActionValues(action, incident) { return action.fields.reduce((values, item) => ({ ...values, [item.name]: action.prefill?.includes(item.name) ? incident[item.name] || '' : '' }), {}) }
 
@@ -209,11 +285,7 @@ function initialActionValues(action, incident) { return action.fields.reduce((va
 function getActionFieldErrors(error, action) { const allowedFields = new Set(action.fields.map((item) => item.name)); const payload = error.response?.data; const candidates = [payload?.fieldErrors, payload?.errors, payload]; for (const candidate of candidates) { if (Array.isArray(candidate)) { const errors = candidate.reduce((result, item) => { const message = item?.message || item?.defaultMessage; if (allowedFields.has(item?.field) && typeof message === 'string') result[item.field] = message; return result }, {}); if (Object.keys(errors).length) return errors } if (candidate && typeof candidate === 'object') { const errors = Object.entries(candidate).reduce((result, [name, message]) => { if (allowedFields.has(name) && typeof message === 'string') result[name] = message; return result }, {}); if (Object.keys(errors).length) return errors } } return {} }
 function getActionErrorMessage(error) { if (error.response?.status === 409) { const payload = error.response.data; const message = typeof payload === 'string' ? payload : payload?.message || payload?.error; if (typeof message === 'string' && !message.includes('\n')) return message; return 'This action is no longer available because the incident lifecycle state has changed.' } return getErrorMessage(error, 'The action could not be saved. Please review the form and try again.') }
 function formatBoolean(value) { return value === true ? 'Yes' : value === false ? 'No' : 'Not recorded' }
-function hasValue(value) { return value !== null && value !== undefined && value !== '' }
 function hasRecordedValue(value) { return value !== null && value !== undefined && String(value).trim() !== '' }
 function formatOptionLabel(value) { if (value === 'MAJOR_CRITICAL_SECURITY_INCIDENT') return 'Major / Critical Security Incident'; return labelize(value).toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()) }
-function displayHistoryValue(value) { return hasValue(value) ? labelize(value) : 'Not recorded' }
-function actionLabel(value) { return value ? String(value).toLowerCase().split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ') : 'Activity recorded' }
-function toTimestamp(value) { const timestamp = new Date(value).getTime(); return Number.isNaN(timestamp) ? 0 : timestamp }
 
 export default IncidentDetails

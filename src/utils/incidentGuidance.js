@@ -6,9 +6,9 @@ export const fieldGuidance = {
   title: { text: 'When reporting, give a short summary of the issue and its impact.', example: 'VPN connection drops on office workstation' },
   description: { text: 'When reporting, describe what happened, when it started, and how it affects your work. Do not include passwords, tokens, or secrets.', example: 'Since 9 am, the VPN disconnects every few minutes, interrupting access to the finance application.' },
   issueType: { text: 'When reporting or reclassifying, choose the type of issue or request that best matches what is known.', example: 'Choose IT Issue for a VPN connection failure; choose Service Request for a software installation request.' },
-  category: { text: 'After choosing an issue type, select the closest matching area of the issue.', example: 'For an IT issue involving VPN disconnections, choose Network / Connectivity.' },
-  severity: { text: 'Choose the level of impact on people, systems, or information when reporting; reassess as the impact becomes clearer.', example: 'Consider whether a connection failure affects one workstation or prevents a whole department from working.' },
-  priority: { text: 'Choose how urgently the incident needs attention when reporting; reassess if urgency changes.', example: 'Consider whether the affected work can wait or an imminent deadline needs attention sooner.' },
+  category: { text: 'After choosing an issue type, select the closest matching area of the issue.', example: 'VPN / Wi-Fi / Internet → Network / Connectivity; password / permissions → Account / Access; application crash → Software / Application; VM / server / Windows service → Server / Infrastructure; MySQL / database connectivity → Database; antivirus / endpoint protection → Security / Endpoint.' },
+  severity: { text: 'Initial assessment of how much impact the issue is causing. IT may reassess this after investigation; every change is recorded in Activity.', example: 'Consider whether a connection failure affects one workstation or prevents a whole department from working.' },
+  priority: { text: 'Initial assessment of how urgently attention is required. IT may reassess this after investigation; every change is recorded in Activity.', example: 'Consider whether the affected work can wait or an imminent deadline needs attention sooner.' },
   deskNumber: { text: 'Enter the desk, seat, room, or workstation location related to the incident, if applicable. Enter only the location identifier. Laptop or mobile users without a fixed desk may leave this blank.', example: 'D-214' },
   affectedSystem: { text: 'Enter the application, account, device, network, service, or other company resource directly affected by the incident.', example: 'Microsoft Outlook, HR laptop, Corporate VPN, or Google Workspace account. A printer or server can also be an affected resource.' },
   impactedUserOrDepartment: { text: 'When reporting, identify the people or departments affected.', example: 'Finance team at the Pune office' },
@@ -29,6 +29,9 @@ export const fieldGuidance = {
 }
 
 export const remarksGuidance = {
+  severity: { text: 'Briefly explain what investigation revealed about the impact. This reason is recorded in Activity.', example: 'Multiple users are affected and the business process is blocked.' },
+  priority: { text: 'Briefly explain why the urgency has changed. This reason is recorded in Activity.', example: 'The affected team must complete a time-critical business process today.' },
+  workNote: { text: 'Record work performed or an observation. A work note does not change the incident status.', example: 'Restarted VPN service and verified connectivity.' },
   investigation: { text: 'Add context about the investigation or any follow-up needed.', example: 'VPN failure reproduced on the affected workstation; logs attached for further analysis.' },
   resolve: { text: 'Add context about the final fix and checks completed during resolution.', example: 'Authentication configuration corrected and login tested successfully.' },
   validate: { text: 'Add any observations from checking that the resolution works.', example: 'Resolution verified; the affected service is functioning normally.' },
@@ -37,20 +40,27 @@ export const remarksGuidance = {
 }
 
 export const actionGuidance = {
+  workNote: 'Add an operational update to the Activity & Work Log.',
   resolutionFeedback: 'Report that the issue still occurs after testing the fix so the assigned IT handler can continue investigating.',
   assign: 'Assign responsibility for handling the incident to the appropriate IT owner.',
-  investigation: 'Update findings and work performed as the investigation progresses.',
+  investigation: 'Record diagnostic findings, observations and what you discovered during investigation.',
   resolve: 'Record the final fix when the incident has been resolved; validation follows this step.',
   validate: 'Confirm that the reported issue has been resolved and the affected service or system is working as expected.',
   close: 'Formally complete the incident workflow once the required resolution and verification steps have been completed.',
   review: 'After closure, record the review, lessons learned, and actions to prevent recurrence.',
   reclassify: 'Change the incident type when new information shows that it belongs to a different classification.',
-  severity: 'Update the level of impact on users, systems, or information.',
-  priority: 'Update how urgently the incident requires attention.',
+  severity: 'Reassess the initial impact assessment as investigation makes the actual impact clearer. Record a reason for the change.',
+  priority: 'Reassess the initial urgency assessment after investigation. Record a reason for the change.',
   escalate: 'Request additional expertise, authority, or management attention when needed.',
   evidence: 'Add or update references to supporting evidence such as logs, screenshots, tickets, or approved internal records.',
 }
 
 export function guidanceDescription(name, id, hasError) {
   return [fieldGuidance[name] && `${id}-help`, hasError && `${id}-error`].filter(Boolean).join(' ') || undefined
+}
+
+export const workActionDescriptions = {
+  investigation: 'Record diagnostic findings and observations.',
+  workNote: 'Record work/actions performed without changing ticket status.',
+  resolve: 'Mark the issue as fixed and move it to reporter validation.',
 }
