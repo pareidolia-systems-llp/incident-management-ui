@@ -144,3 +144,11 @@ test('Web Vitals retain only numeric standard values; attribution and other even
   expect(beforeSend({ type: 'event', payload: { name: 'click', attributes: { text: 'secret' } } })).toBeNull()
   expect(beforeSend({ type: 'trace', payload: {} })).toBeNull()
 })
+
+ test('work log route telemetry omits work content', () => {
+  window.history.replaceState({}, '', '/work-logs?summary=private-summary')
+  const result = beforeSend({ type: 'log', payload: { level: 'error', message: 'private-summary', context: { summary: 'private-summary', details: 'private-details' } } })
+  expect(result.meta.page.url).toBe('/work-logs')
+  expect(JSON.stringify(result)).not.toContain('private-summary')
+  expect(JSON.stringify(result)).not.toContain('private-details')
+})

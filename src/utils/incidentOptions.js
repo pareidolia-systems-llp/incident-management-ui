@@ -9,7 +9,7 @@ export const issueTypeGuide = {
 }
 export const levels = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 export const categoriesByIssueType = {
-  IT_ISSUE: ['Network / Connectivity', 'Account / Access', 'Hardware', 'Software / Application', 'Email / Collaboration', 'Device / Peripheral', 'Other'],
+  IT_ISSUE: ['Network / Connectivity', 'Account / Access', 'Hardware', 'Software / Application', 'Email / Collaboration', 'Device / Peripheral', 'Server / Infrastructure', 'Database', 'Security / Endpoint', 'Other'],
   SERVICE_REQUEST: ['Account / Access Request', 'Software Installation', 'Hardware Request', 'Permission / Access Change', 'General IT Request', 'Other'],
   SUSPECTED_SECURITY_INCIDENT: ['Phishing / Suspicious Email', 'Suspicious Login / Account Activity', 'Malware / Suspicious File', 'Unauthorized Access', 'Data Leakage / Exposure', 'Lost / Stolen Device', 'Other'],
   INFORMATION_SECURITY_INCIDENT: ['Account Compromise', 'Malware', 'Unauthorized Access', 'Data Breach / Exposure', 'Policy Violation', 'Security Control Failure', 'Other'],

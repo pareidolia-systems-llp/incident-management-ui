@@ -1,7 +1,7 @@
 import { version } from '../../package.json'
 
 const app = { name: 'incident-management-ui', version, environment: 'dev' }
-const routes = new Set(['/', '/login', '/incidents', '/incidents/new', '/incidents/:id', '/help'])
+const routes = new Set(['/', '/login', '/incidents', '/incidents/new', '/incidents/:id', '/work-logs', '/help'])
 const errorTypes = new Set(['Error', 'TypeError', 'RangeError', 'ReferenceError', 'SyntaxError', 'URIError', 'EvalError', 'UnhandledRejection'])
 const sourceFiles = new Set(Object.keys(import.meta.glob(['/src/**/*.{js,jsx}', '!/src/**/*.test.{js,jsx}'])))
 let initialization

@@ -79,3 +79,7 @@ export async function submitResolutionFeedback(id, payload) {
   const response = await apiClient.post(`/api/incidents/${id}/resolution-feedback`, payload)
   return response.data
 }
+
+export async function addWorkNote(id, payload) {
+  return (await apiClient.post(`/api/incidents/${id}/work-notes`, payload)).data
+}

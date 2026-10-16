@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 
-export default function ImagePicker({ files, onChange, disabled }) {
+export default function ImagePicker({ files, onChange, disabled, label = 'Screenshots / Supporting Images' }) {
   const id = useId()
   const [error, setError] = useState('')
   function select(event) {
@@ -17,7 +17,7 @@ export default function ImagePicker({ files, onChange, disabled }) {
     onChange(selected)
   }
   return <div>
-    <label className="form-label fw-semibold" htmlFor={id}>Screenshots / Supporting Images</label>
+    <label className="form-label fw-semibold" htmlFor={id}>{label}</label>
     <input id={id} type="file" className="form-control" accept="image/png,image/jpeg" multiple onChange={select} disabled={disabled} aria-describedby={`${id}-help`} />
     <p id={`${id}-help`} className="form-text">Optional. Up to 5 PNG or JPEG images per upload, 5 MB each; maximum 20 million pixels per image.</p>
     {error && <div className="alert alert-warning" role="alert">{error}</div>}

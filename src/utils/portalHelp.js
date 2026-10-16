@@ -1,10 +1,10 @@
 // Documentation only. Permissions and workflow remain in the existing application.
 export const helpSections = [
-  ['quick-start', 'Quick Start'], ['purpose', 'What This Portal Is For'],
-  ['lifecycle', 'Incident Lifecycle'], ['roles', 'User Roles'],
-  ['incident-types', 'Choosing the Correct Incident Type'], ['field-guide', 'Complete Field Guide'],
-  ['screenshots', 'Screenshots and Supporting Evidence'], ['after-submission', 'What Happens After Submission'],
-  ['audit-trail', 'Understanding the Audit Trail'], ['monthly-reports', 'Monthly Incident Reports'],
+  ['quick-start', 'Creating an Incident'], ['purpose', 'What This Portal Is For'],
+  ['lifecycle', 'Resolution and Validation'], ['roles', 'Roles and Permissions'],
+  ['incident-types', 'Understanding Classification'], ['field-guide', 'Complete Field Guide'],
+  ['screenshots', 'Attachments'], ['after-submission', 'What Happens After Submission'],
+  ['work-logs', 'Investigation and Work Logs'], ['issue-still-persists', 'Issue Still Persists'], ['my-work-log', 'My Work Log'], ['audit-trail', 'Understanding the Audit Trail'], ['monthly-reports', 'Monthly Incident Reports'],
   ['scenarios', 'Common Scenarios'], ['faq', 'Frequently Asked Questions'],
 ]
 
@@ -48,11 +48,11 @@ export const fieldGroups = [
   ] },
   { title: 'Operational work and evidence', fields: [
     ['assigned-owner', 'Assigned Owner', 'Who is responsible for handling the incident.', 'Set automatically on creation; Assign Incident is offered to IT Handler or Admin for Open incidents.', 'The IT owner responsible for investigating the affected service.', 'Changing ownership only in Remarks; use Assign Incident when permitted.'],
-    ['investigation-details', 'Investigation Details', 'What was checked during troubleshooting and analysis, and what was found.', 'During Update Investigation.', 'Reviewed application logs and reproduced the authentication failure.', 'Simply repeating the original Description.'],
+    ['investigation-details', 'Investigation Details', 'What was checked during troubleshooting and analysis, and what was found.', 'During Record Investigation.', 'Reviewed application logs and reproduced the authentication failure.', 'Simply repeating the original Description.'],
     ['root-cause', 'Root Cause', 'The confirmed underlying reason for the problem.', 'Record after investigation establishes the cause.', 'Expired OAuth configuration caused authentication requests to fail.', 'Presenting an unverified guess as a confirmed root cause.'],
-    ['actions-taken', 'Actions Taken', 'Work already performed during investigation or remediation.', 'During Update Investigation.', 'Reviewed authentication settings and restarted the affected service.', 'Listing planned work as though it has already been completed.'],
-    ['containment-action', 'Containment Action', 'A temporary measure to reduce impact while investigation or a permanent fix continues.', 'During Update Investigation, when immediate impact reduction is needed.', 'Disabled the affected integration temporarily while the issue was investigated.', 'Confusing temporary containment with the permanent corrective action.'],
-    ['corrective-action', 'Corrective Action', 'The fix applied to address THIS incident.', 'During Update Investigation, once a fix is established.', 'Corrected the authentication configuration and verified successful login.', 'Describing only a future prevention plan rather than what fixed this incident.'],
+    ['actions-taken', 'Actions Taken', 'Work already performed during investigation or remediation.', 'During Record Investigation.', 'Reviewed authentication settings and restarted the affected service.', 'Listing planned work as though it has already been completed.'],
+    ['containment-action', 'Containment Action', 'A temporary measure to reduce impact while investigation or a permanent fix continues.', 'During Record Investigation, when immediate impact reduction is needed.', 'Disabled the affected integration temporarily while the issue was investigated.', 'Confusing temporary containment with the permanent corrective action.'],
+    ['corrective-action', 'Corrective Action', 'The fix applied to address THIS incident.', 'During Record Investigation, once a fix is established.', 'Corrected the authentication configuration and verified successful login.', 'Describing only a future prevention plan rather than what fixed this incident.'],
     ['evidence-reference', 'Evidence Reference', 'Text that DESCRIBES or REFERENCES supporting evidence. The image itself is stored as an attachment.', 'Required in Update Evidence Reference; optional in Issue Still Persists. Actual images use the Screenshots / Supporting Images control.', 'Screenshot of VPN authentication failure attached; Reference: internal support ticket IT-2026-041; Windows Event Viewer entry captured at 14:20; Application log entry reviewed during investigation.', 'Pasting passwords, tokens, credentials, secret keys, or image binary data into this field.'],
     ['remarks', 'Remarks', 'Additional context relevant to the action being performed.', 'Optional in action dialogs where shown.', 'User confirmed the issue occurs on both office Wi-Fi and mobile hotspot.', 'Repeating information already clearly recorded in another field.'],
     ['escalation', 'Escalation Required / Escalation Details', 'Escalation Required indicates recorded need for additional help; Escalation Details explains why and who is needed.', 'IT Handler or Admin can use Escalate Incident on non-closed incidents. Escalation Details is required; the action sets Escalation Required to Yes.', 'Network team support is needed because all office users are affected and specialist expertise is required.', 'Assuming this record automatically sends a message or grants approval. The current action records details and history, not a notification/approval workflow.'],
@@ -78,6 +78,13 @@ export const scenarios = [
 ]
 
 export const faqs = [
+  ['What is the difference between Investigation and Work Log?', 'Investigation = what IT discovered. Log Work on This Incident = what IT did. Both belong to the incident; a work note does not change its status.'],
+  ['When should I use Issue Still Persists?', 'The original reporter uses it after testing a proposed resolution when the problem remains. Feedback returns the incident to In Progress for further investigation.'],
+  ['Who can close an incident?', 'Only the original reporter can close the incident, after validating the resolution. Admin or Reviewer cannot close on behalf of someone else.'],
+  ['Can I upload screenshots?', 'Yes, where your role permits: Create Incident, Attachments, Record Investigation, Update Evidence Reference and Issue Still Persists. PNG/JPEG only: up to 5 files per upload, 5 MB each, maximum 20 million pixels each. Redact secrets and unnecessary personal information first.'],
+  ['What is My Work Log?', 'It records IT work not tied to an incident. IT Handler and Admin can create and see only their own entries.'],
+  ['Why can IT change Severity or Priority?', 'Reporter selections are the initial assessment. IT may reassess them when investigation reveals the actual technical or business impact or urgency. A reason is required; all changes, actors and timestamps are recorded in Activity.'],
+  ['What does Escalate mean?', 'Escalation requests additional expertise, authority or management attention. It does not automatically resolve or close an incident.'],
   ['Can I change who reported the incident?', 'No. Reported By is determined automatically from the signed-in company account.'],
   ['Can I attach screenshots after the incident is created?', 'Yes, if your role permits uploads and you can access the incident. Reporter, IT Handler, and Admin can use the Attachments section. Reviewer can download images but cannot upload them. You can add another batch later.'],
   ['What is the difference between Evidence Reference and a screenshot?', 'Evidence Reference describes or references supporting evidence. Upload the actual image through Screenshots / Supporting Images.'],

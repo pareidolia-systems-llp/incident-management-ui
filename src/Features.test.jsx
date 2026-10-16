@@ -162,3 +162,18 @@ test('detail upload refreshes metadata and audit history', async () => {
   expect(await screen.findByText('Screenshots uploaded successfully.')).toBeTruthy()
   await waitFor(() => expect(apiClient.get.mock.calls.filter(([url]) => url.endsWith('/history'))).toHaveLength(2))
 })
+
+test('IT Issue category dropdown includes infrastructure, database, endpoint and Other', () => {
+  withUser(<CreateIncident />)
+  fireEvent.change(screen.getByLabelText(/^Issue Type/), { target: { value: 'IT_ISSUE' } })
+  const categories = [...screen.getByLabelText(/^Category/).options].map(option => option.value)
+  expect(categories).toEqual(expect.arrayContaining(['Server / Infrastructure', 'Database', 'Security / Endpoint', 'Other']))
+})
+
+test('reporter severity and priority guidance explains the initial assessment and audited reassessment', () => {
+  withUser(<CreateIncident />)
+  expect(screen.getByText(/Initial assessment of how much impact/).textContent).toContain('IT may reassess this after investigation')
+  expect(screen.getByText(/Initial assessment of how urgently/).textContent).toContain('every change is recorded in Activity')
+  expect(screen.getByLabelText(/^Severity/)).toBeTruthy()
+  expect(screen.getByLabelText(/^Priority/)).toBeTruthy()
+})

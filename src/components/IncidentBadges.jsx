@@ -4,3 +4,7 @@ const severityColors = { CRITICAL: 'danger', HIGH: 'warning', MEDIUM: 'info', LO
 
 export function StatusBadge({ status }) { return <span className={`badge badge-status text-bg-${statusColors[status] || 'secondary'}`}>{labelize(status)}</span> }
 export function SeverityBadge({ severity }) { return <span className={`badge badge-severity text-bg-${severityColors[severity] || 'secondary'}`}>{labelize(severity)}</span> }
+
+export function AttentionBadge({ active }) {
+  return active ? <span className="badge badge-attention">ISSUE STILL PERSISTS</span> : null
+}
