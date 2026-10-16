@@ -123,7 +123,7 @@ test('failed image upload shows partial success and existing attachments section
   expect(apiClient.post).toHaveBeenCalledTimes(2)
   expect(screen.getByRole('button', { name: 'Upload screenshots' })).toBeTruthy()
   apiClient.post.mockResolvedValue({ data: [] })
-  fireEvent.change(screen.getByLabelText('Screenshots / Supporting Images'), { target: { files: [jpeg()] } })
+  fireEvent.change(within(screen.getByRole('region', { name: 'Attachments' })).getByLabelText('Screenshots / Supporting Images'), { target: { files: [jpeg()] } })
   fireEvent.click(screen.getByRole('button', { name: 'Upload screenshots' }))
   await screen.findByText('Screenshots uploaded successfully.')
   expect(apiClient.post.mock.calls.filter(([url]) => url.endsWith('/evidence'))).toHaveLength(1)
@@ -138,7 +138,8 @@ test('cancel clears images and other action modals do not get the picker', async
   expect(within(screen.getByRole('dialog')).queryByRole('button', { name: 'Remove error.png' })).toBeNull()
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
   fireEvent.click(screen.getByRole('button', { name: 'Resolve Incident', exact: true }))
-  expect(within(screen.getByRole('dialog')).queryByLabelText('Screenshots / Supporting Images')).toBeNull()
+  expect(within(await screen.findByRole('region', { name: 'Resolution' })).queryByLabelText('Screenshots / Supporting Images')).toBeNull()
+  expect(screen.queryByRole('dialog')).toBeNull()
 })
 test.each(['REPORTER', 'REVIEWER'])('%s does not gain access to the evidence action', async (role) => {
   renderDetails(role)

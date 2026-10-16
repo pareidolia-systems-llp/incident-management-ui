@@ -39,7 +39,7 @@ export default function IncidentAttachments({ incidentId, canUpload, onUploaded 
       setError(status === 403 ? 'You do not have access to this attachment.' : status === 401 ? 'Your session has expired. Please sign in again.' : 'The attachment could not be downloaded. Please retry.')
     } finally { setBusy(false) }
   }
-  return <section className="card section-card mb-4"><div className="card-body">
+  return <section className="card section-card mb-4" aria-label="Attachments"><div className="card-body">
     <h2 className="h6">Attachments</h2>
     {notice && <div className="alert alert-success" role="status">{notice}</div>}
     {error && <div className="alert alert-danger" role="alert">{error} <button className="btn btn-sm btn-outline-secondary" onClick={load} disabled={busy || loading}>Reload attachments</button></div>}

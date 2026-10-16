@@ -16,6 +16,7 @@ beforeEach(() => {
   apiClient.post.mockImplementation(async (url, payload) => {
     const actionType = url.endsWith('/work-notes') ? 'WORK_NOTE' : url.endsWith('/investigation') ? 'INVESTIGATION_UPDATED' : 'INCIDENT_RESOLVED'
     history = [{ id: 1, actionType, newValue: payload.investigationDetails || payload.resolutionDetails, remarks: payload.remarks, changedBy: 'handler@example.test', changedAt: '2026-10-15T11:00:00' }]
+    if (actionType === 'INVESTIGATION_UPDATED') incident = { ...incident, ...payload }
     if (actionType === 'INCIDENT_RESOLVED') incident = { ...incident, status: 'RESOLVED', issueStillPersists: false }
     return { data: incident }
   })
@@ -26,23 +27,26 @@ function mount(role = 'IT_HANDLER') {
   return render(<AuthContext.Provider value={{ user: { role, email: role === 'REPORTER' ? incident.reportedBy : 'handler@example.test' } }}><MemoryRouter initialEntries={['/incidents/12']}><Location /><Routes><Route path="/incidents/:id" element={<IncidentDetails />} /></Routes></MemoryRouter></AuthContext.Provider>)
 }
 const cases = [
-  ['Record Investigation', /^Investigation Details/, 'Save Investigation Findings', 'Investigation Updated', '/investigation'],
+  ['Record Investigation', /^Investigation Details/, 'Save Progress', 'Investigation Updated', '/investigation'],
   ['Log Work on This Incident', /^Work Note/, 'Log Work on This Incident', 'Work note added', '/work-notes'],
-  ['Resolve Incident', /^Resolution Details/, 'Resolve Incident', 'Incident Resolved', '/resolve'],
+  ['Resolve Incident', /^Resolution Details/, 'Confirm Resolution', 'Incident Resolved', '/resolve'],
 ]
 
 test.each(['ADMIN', 'IT_HANDLER'])('%s has a single workspace immediately above activity', async (role) => {
   mount(role)
   const work = await screen.findByRole('region', { name: 'Work on Incident' })
-  expect([...work.querySelectorAll('.btn-primary')].map((button) => button.textContent)).toEqual(['Record Investigation', 'Log Work on This Incident', 'Resolve Incident'])
+  expect(within(work).queryByRole('button', { name: 'Record Investigation' })).toBeNull()
+  expect(within(work).getByLabelText(/^Investigation Details/)).toBeTruthy()
+  expect(within(work).getByLabelText(/^Actions Taken/)).toBeTruthy()
+  for (const name of ['Save Progress', 'Resolve Incident', 'Log Work on This Incident']) expect(within(work).getByRole('button', { name, exact: true })).toBeTruthy()
   expect(work.previousElementSibling.getAttribute('aria-labelledby')).toBe('incident-progress-title')
   expect(work.nextElementSibling.id).toBe('incident-activity')
   expect(screen.getAllByRole('region', { name: 'Activity & Work Log' })).toHaveLength(1)
   expect(within(work).getByRole('link', { name: 'Activity & Work Log' }).getAttribute('href')).toBe('#incident-activity')
   expect(screen.getByText('Issue reported as still unresolved')).toBeTruthy()
-  expect(within(work).getByText('Record diagnostic findings and observations.')).toBeTruthy()
+  expect(within(work).getByText('Record diagnostic findings and observations. Save progress as you work.')).toBeTruthy()
   expect(within(work).getByText('Record work/actions performed without changing ticket status.')).toBeTruthy()
-  expect(within(work).getByText('Mark the issue as fixed and move it to reporter validation.')).toBeTruthy()
+  expect(within(work).queryByRole('region', { name: 'Resolution' })).toBeNull()
 })
 
 test.each(['REPORTER', 'REVIEWER'])('%s does not receive operational workspace controls', async (role) => {
@@ -58,8 +62,9 @@ test.each(['REPORTER', 'REVIEWER'])('%s does not receive operational workspace c
 test.each(cases)('%s opens from workspace, saves on the same route and immediately refreshes activity', async (name, field, submit, eventLabel, endpoint) => {
   mount()
   const work = await screen.findByRole('region', { name: 'Work on Incident' })
-  fireEvent.click(within(work).getByRole('button', { name, exact: true }))
-  const modal = screen.getByRole('dialog', { name })
+  if (name !== 'Record Investigation') fireEvent.click(within(work).getByRole('button', { name, exact: true }))
+  const modal = name === 'Log Work on This Incident' ? screen.getByRole('dialog', { name }) : work
+  if (name === 'Resolve Incident') await within(work).findByRole('button', { name: 'Confirm Resolution' })
   fireEvent.change(within(modal).getByLabelText(field), { target: { value: 'Verified VPN connectivity' } })
   if (endpoint === '/investigation') {
     expect(within(modal).getByLabelText('Screenshots / Supporting Images')).toBeTruthy()
@@ -95,15 +100,16 @@ test.each(cases)('%s preserves typed values and selected images across the polli
   mount()
   await act(async () => { await Promise.resolve() })
   const work = screen.getByRole('region', { name: 'Work on Incident' })
-  fireEvent.click(within(work).getByRole('button', { name, exact: true }))
-  const modal = screen.getByRole('dialog')
+  if (name !== 'Record Investigation') fireEvent.click(within(work).getByRole('button', { name, exact: true }))
+  await act(async () => { await Promise.resolve() })
+  const modal = name === 'Log Work on This Incident' ? screen.getByRole('dialog') : work
   const input = within(modal).getByLabelText(field)
   fireEvent.change(input, { target: { value: 'Still typing' } })
   if (name === 'Record Investigation') fireEvent.change(within(modal).getByLabelText('Screenshots / Supporting Images'), { target: { files: [new File(['image'], 'vpn.png', { type: 'image/png' })] } })
   const calls = apiClient.get.mock.calls.length
   await act(async () => { await vi.advanceTimersByTimeAsync(60000) })
   expect(apiClient.get).toHaveBeenCalledTimes(calls)
-  expect(screen.getByRole('dialog')).toBe(modal)
+  expect(name === 'Log Work on This Incident' ? screen.getByRole('dialog') : screen.getByRole('region', { name: 'Work on Incident' })).toBe(modal)
   expect(input.value).toBe('Still typing')
   if (name === 'Record Investigation') expect(within(modal).getByRole('button', { name: 'Remove vpn.png' })).toBeTruthy()
 })

@@ -156,7 +156,8 @@ test.each(['REPORTER', 'IT_HANDLER', 'REVIEWER', 'ADMIN'])('details attachment a
 })
 test('detail upload refreshes metadata and audit history', async () => {
   withUser(<Routes><Route path="/incidents/:id" element={<IncidentDetails />} /></Routes>, 'REPORTER', '/incidents/12')
-  const picker = await screen.findByLabelText('Screenshots / Supporting Images')
+  const attachments = await screen.findByRole('region', { name: 'Attachments' })
+  const picker = attachments.querySelector('input[type=file]')
   fireEvent.change(picker, { target: { files: [new File(['png'], 'new.png', { type: 'image/png' })] } })
   fireEvent.click(screen.getByRole('button', { name: 'Upload screenshots' }))
   expect(await screen.findByText('Screenshots uploaded successfully.')).toBeTruthy()
@@ -176,4 +177,13 @@ test('reporter severity and priority guidance explains the initial assessment an
   expect(screen.getByText(/Initial assessment of how urgently/).textContent).toContain('every change is recorded in Activity')
   expect(screen.getByLabelText(/^Severity/)).toBeTruthy()
   expect(screen.getByLabelText(/^Priority/)).toBeTruthy()
+})
+
+test('creation immediately fetches and displays assigned server state without waiting for polling', async () => {
+  withUser(<Routes><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/:id" element={<IncidentDetails />} /></Routes>, 'REPORTER', '/incidents/new')
+  fillCreate()
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  expect(await screen.findByText('Assigned (current)')).toBeTruthy()
+  expect(apiClient.get).toHaveBeenCalledWith('/api/incidents/12')
+  expect(screen.queryByRole('button', { name: 'Save Progress' })).toBeNull()
 })

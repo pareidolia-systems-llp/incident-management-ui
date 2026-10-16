@@ -86,7 +86,9 @@ test.each([
 
 test('admin retains investigation, resolution, work-note and operational actions', async () => {
   await mount('ADMIN')
-  for (const name of ['Record Investigation', 'Resolve Incident', 'Log Work on This Incident', 'Reclassify Incident', 'Reassess Severity', 'Reassess Priority', 'Escalate Incident', 'Update Evidence Reference']) {
+  expect(screen.queryByRole('button', { name: 'Record Investigation' })).toBeNull()
+  expect(screen.getByLabelText(/^Investigation Details/)).toBeTruthy()
+  for (const name of ['Save Progress', 'Resolve Incident', 'Log Work on This Incident', 'Reclassify Incident', 'Reassess Severity', 'Reassess Priority', 'Escalate Incident', 'Update Evidence Reference']) {
     expect(screen.getByRole('button', { name, exact: true, hidden: true })).toBeTruthy()
   }
   expect(screen.queryByRole('button', { name: 'Validate Incident' })).toBeNull()
