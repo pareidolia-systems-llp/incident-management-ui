@@ -1,0 +1,57 @@
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
+import usePolling from './hooks/usePolling'
+beforeEach(() => { vi.useFakeTimers(); Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' }) })
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks() })
+const advance = ms => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
+function Probe({ load, enabled = true }) { usePolling(load, enabled); return null }
+test('visible pages poll at ten seconds; hidden tabs stop, and focus/visibility bursts coalesce', async () => {
+  const load = vi.fn().mockResolvedValue()
+  render(<Probe load={load} />); await advance(0)
+  expect(load).toHaveBeenCalledTimes(1)
+  await advance(9999); expect(load).toHaveBeenCalledTimes(1)
+  await advance(1); expect(load).toHaveBeenCalledTimes(2)
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
+  fireEvent(document, new Event('visibilitychange')); fireEvent.focus(window)
+  await advance(30000); expect(load).toHaveBeenCalledTimes(2)
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
+  fireEvent(document, new Event('visibilitychange')); fireEvent.focus(window); fireEvent.focus(window)
+  await advance(100); expect(load).toHaveBeenCalledTimes(3)
+  await advance(500); expect(load).toHaveBeenCalledTimes(3)
+})
+test('slow reads serialize focus and interval requests; failures retry on the next interval', async () => {
+  let finish
+  const load = vi.fn().mockImplementationOnce(() => new Promise(resolve => { finish = resolve })).mockRejectedValue(new Error('Offline'))
+  render(<Probe load={load} />); await advance(0)
+  fireEvent.focus(window); await advance(20100)
+  expect(load).toHaveBeenCalledTimes(1)
+  await act(async () => finish())
+  await advance(10000); expect(load).toHaveBeenCalledTimes(2)
+  await advance(10000); expect(load).toHaveBeenCalledTimes(3)
+})
+test('editing invalidates an in-flight result and suppresses focus/interval refreshes', async () => {
+  let current, finish
+  const load = vi.fn((silent, isCurrent) => { current = isCurrent; return new Promise(resolve => { finish = resolve }) })
+  const view = render(<Probe load={load} />); await advance(0)
+  await act(async () => finish())
+  await advance(10000)
+  expect(current()).toBe(true)
+  view.rerender(<Probe load={load} enabled={false} />)
+  expect(current()).toBe(false)
+  fireEvent.focus(window); await advance(20000)
+  expect(load).toHaveBeenCalledTimes(2)
+  await act(async () => finish())
+  view.rerender(<Probe load={load} enabled />)
+  expect(current()).toBe(false)
+})
+test('cleanup removes focus/visibility listeners, intervals and a pending focus debounce', async () => {
+  const removeWindow = vi.spyOn(window, 'removeEventListener'), removeDocument = vi.spyOn(document, 'removeEventListener')
+  const load = vi.fn().mockResolvedValue()
+  const view = render(<Probe load={load} />); await advance(0)
+  fireEvent.focus(window); view.unmount()
+  expect(vi.getTimerCount()).toBe(0)
+  expect(removeWindow).toHaveBeenCalledWith('focus', expect.any(Function))
+  expect(removeDocument).toHaveBeenCalledWith('visibilitychange', expect.any(Function))
+  fireEvent.focus(window); fireEvent(document, new Event('visibilitychange')); await advance(20000)
+  expect(load).toHaveBeenCalledTimes(1)
+})

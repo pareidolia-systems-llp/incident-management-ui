@@ -23,7 +23,7 @@ afterEach(() => { cleanup(); vi.useRealTimers() })
 function mount(page, role = 'IT_HANDLER') {
   return render(<AuthContext.Provider value={{ user: { ...user, role } }}><MemoryRouter initialEntries={['/incidents/12']}><Routes><Route path="/incidents/:id" element={page} /></Routes></MemoryRouter></AuthContext.Provider>)
 }
-async function tick() { await act(async () => { await vi.advanceTimersByTimeAsync(30000) }) }
+async function tick() { await act(async () => { await vi.advanceTimersByTimeAsync(10000) }) }
 async function flush() { await act(async () => { await Promise.resolve() }) }
 
 test.each([false, true])('list attention badge matches backend flag %s', async (active) => {
@@ -119,12 +119,11 @@ test.each(['none', 'success', 'failure'])('investigation screenshots: %s', async
     return { data: incident }
   })
   mount(<IncidentDetails />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Record Investigation' }))
-  const modal = screen.getByRole('dialog')
+  const modal = await screen.findByRole('region', { name: 'Work on Incident' })
   fireEvent.change(within(modal).getByLabelText(/^Investigation Details/), { target: { value: 'Checked authentication logs' } })
   const picker = within(modal).getByLabelText('Screenshots / Supporting Images')
   if (mode !== 'none') fireEvent.change(picker, { target: { files: [new File(['image'], 'vpn.png', { type: 'image/png' })] } })
-  fireEvent.click(within(modal).getByRole('button', { name: 'Save Investigation Findings' }))
+  fireEvent.click(within(modal).getByRole('button', { name: 'Save Progress' }))
   expect(await screen.findByText('Checked authentication logs')).toBeTruthy()
   expect(apiClient.post).toHaveBeenCalledTimes(mode === 'none' ? 1 : 2)
   if (mode === 'failure') {
@@ -168,25 +167,23 @@ test('a polling response arriving after a modal opens cannot replace the form or
   apiClient.get.mockImplementation((url) => url.endsWith('/12')
     ? new Promise((resolve) => { finish = resolve }) : Promise.resolve({ data: [] }))
   await tick()
-  fireEvent.click(screen.getByRole('button', { name: 'Record Investigation' }))
-  const modal = screen.getByRole('dialog')
+  const modal = screen.getByRole('region', { name: 'Work on Incident' })
   const field = within(modal).getByLabelText(/^Investigation Details/)
   fireEvent.change(field, { target: { value: 'Unsaved analysis' } })
   await act(async () => finish({ data: { ...incident, issueStillPersists: true } }))
   expect(field.value).toBe('Unsaved analysis')
-  expect(screen.getByRole('dialog')).toBe(modal)
+  expect(screen.getByRole('region', { name: 'Work on Incident' })).toBe(modal)
   expect(screen.queryByText('Issue reported as still unresolved')).toBeNull()
 })
 
 test('failed investigation preserves input and screenshots and never starts attachment upload', async () => {
   apiClient.post.mockRejectedValue({ response: { status: 409, data: { message: 'Incident state changed.' } } })
   mount(<IncidentDetails />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Record Investigation' }))
-  const modal = screen.getByRole('dialog')
+  const modal = await screen.findByRole('region', { name: 'Work on Incident' })
   const field = within(modal).getByLabelText(/^Investigation Details/)
   fireEvent.change(field, { target: { value: 'Unsaved investigation' } })
   fireEvent.change(within(modal).getByLabelText('Screenshots / Supporting Images'), { target: { files: [new File(['image'], 'vpn.png', { type: 'image/png' })] } })
-  fireEvent.click(within(modal).getByRole('button', { name: 'Save Investigation Findings' }))
+  fireEvent.click(within(modal).getByRole('button', { name: 'Save Progress' }))
   expect(await within(modal).findByRole('alert')).toBeTruthy()
   expect(field.value).toBe('Unsaved investigation')
   expect(within(modal).getByRole('button', { name: 'Remove vpn.png' })).toBeTruthy()

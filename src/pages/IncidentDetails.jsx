@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import usePolling from '../hooks/usePolling'
 import { historyChange, historyActionLabel, historyActorLabel, historyRemarks, isFieldTransition, activityFilters, filterActivity } from '../utils/incidentHistory'
 import IncidentAttachments from '../components/IncidentAttachments'
@@ -55,6 +55,11 @@ function field(name, label, required = false, type = 'text', options = []) { ret
 
 function IncidentDetails() {
   const { id } = useParams()
+  return <IncidentDetailsPage key={id} />
+}
+
+function IncidentDetailsPage() {
+  const { id } = useParams()
   const location = useLocation()
   const { user } = useAuth()
   const [incident, setIncident] = useState(null)
@@ -72,6 +77,17 @@ function IncidentDetails() {
   const [actionFiles, setActionFiles] = useState([])
   const [attachmentVersion, setAttachmentVersion] = useState(0)
   const [evidenceUploadWarning, setEvidenceUploadWarning] = useState('')
+  const [investigationDraft, setInvestigationDraft] = useState(null)
+  const [investigationFiles, setInvestigationFiles] = useState([])
+  const [resolutionOpen, setResolutionOpen] = useState(false)
+  const [resolutionValues, setResolutionValues] = useState({})
+  const [workspaceSaving, setWorkspaceSaving] = useState(false)
+  const workspacePending = useRef(false)
+  const [workspaceError, setWorkspaceError] = useState('')
+  const [workspaceErrors, setWorkspaceErrors] = useState({})
+  const [workspaceNotice, setWorkspaceNotice] = useState('')
+  const investigationValues = investigationDraft || initialActionValues(actionDefinitions.investigation, incident || {})
+  const investigationDirty = investigationFiles.length > 0 || (investigationDraft !== null && actionDefinitions.investigation.fields.some(({ name }) => investigationDraft[name] !== initialActionValues(actionDefinitions.investigation, incident || {})[name]))
 
   const fetchIncident = useCallback(async (silent, current) => {
     if (!silent) { setState('loading'); setHistoryState('loading'); setAccessDenied(false) }
@@ -82,10 +98,11 @@ function IncidentDetails() {
     if (historyResult.status === 'fulfilled') { setHistory(historyResult.value); setHistoryState('ready') }
     else if (!silent) { setHistoryError(getErrorMessage(historyResult.reason, 'We could not load the activity history. Please try again.')); setHistoryState('error') }
   }, [id])
-  const refresh = usePolling(fetchIncident, !activeAction && !savingAction)
+  const refresh = usePolling(fetchIncident, !activeAction && !savingAction && !investigationDirty && !resolutionOpen && !workspaceSaving)
   const loadIncident = () => refresh()
 
   function openAction(actionKey) {
+    if (workspacePending.current || savingAction) return
     const action = actionDefinitions[actionKey]
     setActionValues(initialActionValues(action, incident))
     setActionFiles([])
@@ -116,16 +133,7 @@ function IncidentDetails() {
     setActionErrors({})
     try {
       await action.submit(id, createPayload(action, actionValues))
-      if (['evidence', 'investigation', 'resolutionFeedback'].includes(activeAction)) {
-        setEvidenceUploadWarning('')
-        if (actionFiles.length) {
-          try { await uploadAttachments(id, actionFiles) }
-          catch {
-            setEvidenceUploadWarning(activeAction === 'resolutionFeedback' ? 'Your feedback was saved and the incident is In Progress, but one or more screenshots could not be uploaded. Please retry them using the Attachments section.' : `${activeAction === 'investigation' ? 'Investigation' : 'Evidence'} was updated successfully, but one or more screenshots could not be uploaded. Please upload them later using the Attachments section.`)
-          }
-        }
-      }
-      if (['evidence', 'investigation', 'resolutionFeedback'].includes(activeAction)) setAttachmentVersion((current) => current + 1)
+      await uploadActionScreenshots(activeAction, actionFiles)
       setActiveAction(null)
       setActionValues({})
       setActionFiles([])
@@ -135,6 +143,62 @@ function IncidentDetails() {
       setActionError(getActionErrorMessage(requestError))
     } finally {
       setSavingAction(false)
+    }
+  }
+
+
+  async function uploadActionScreenshots(actionKey, files) {
+    if (!['evidence', 'investigation', 'resolutionFeedback'].includes(actionKey)) return
+    setEvidenceUploadWarning('')
+    if (files.length) {
+      try { await uploadAttachments(id, files) }
+      catch {
+        setEvidenceUploadWarning(actionKey === 'resolutionFeedback' ? 'Your feedback was saved and the incident is In Progress, but one or more screenshots could not be uploaded. Please retry them using the Attachments section.' : `${actionKey === 'investigation' ? 'Investigation' : 'Evidence'} was updated successfully, but one or more screenshots could not be uploaded. Please upload them later using the Attachments section.`)
+      }
+    }
+    setAttachmentVersion(current => current + 1)
+  }
+
+  function editInvestigation(event) {
+    const { name, value } = event.target
+    setInvestigationDraft(current => ({ ...(current || initialActionValues(actionDefinitions.investigation, incident)), [name]: value }))
+    setWorkspaceError(''); setWorkspaceErrors({}); setWorkspaceNotice('')
+  }
+
+  async function saveInvestigationDraft() {
+    if (!investigationDirty) return
+    const saved = await updateInvestigation(id, createPayload(actionDefinitions.investigation, investigationValues))
+    setIncident(saved)
+    setInvestigationDraft(null) // Keep persisted findings visible; clear one-use remarks and the dirty state.
+    await uploadActionScreenshots('investigation', investigationFiles)
+    setInvestigationFiles([])
+    setWorkspaceNotice('Investigation progress saved.')
+  }
+
+  async function runWorkspace(mode) {
+    if (workspacePending.current || savingAction) return
+    const action = mode === 'confirm' ? actionDefinitions.resolve : actionDefinitions.investigation
+    const errors = validateAction(action, mode === 'confirm' ? resolutionValues : investigationValues)
+    if (Object.keys(errors).length) { setWorkspaceErrors(errors); setWorkspaceError('Please correct the highlighted fields before saving.'); return }
+    workspacePending.current = true
+    setWorkspaceSaving(true); setWorkspaceError(''); setWorkspaceErrors({}); setWorkspaceNotice('')
+    let stage = actionDefinitions.investigation
+    try {
+      await saveInvestigationDraft()
+      if (mode === 'resolve') setResolutionOpen(true)
+      if (mode === 'confirm') {
+        stage = actionDefinitions.resolve
+        const saved = await resolveIncident(id, createPayload(actionDefinitions.resolve, resolutionValues))
+        setIncident(saved); setResolutionOpen(false); setResolutionValues({})
+        setWorkspaceNotice('Incident resolved and ready for reporter validation.')
+      }
+      await refresh(true, false)
+    } catch (failure) {
+      setWorkspaceErrors(getActionFieldErrors(failure, stage))
+      setWorkspaceError(getActionErrorMessage(failure))
+    } finally {
+      workspacePending.current = false
+      setWorkspaceSaving(false)
     }
   }
 
@@ -159,7 +223,7 @@ function IncidentDetails() {
       {location.state?.uploadWarning && <div className="alert alert-warning" role="alert">{location.state.uploadWarning}</div>}
       {evidenceUploadWarning && <div className="alert alert-warning" role="alert">{evidenceUploadWarning}</div>}
       <IncidentStatusTracker incident={incident} />
-      <ActionsPanel operational={canPerformOperationalActions} waitingMessage={user.role === 'REPORTER' ? reporterWaitingMessage(incident) : null} actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} />
+      <ActionsPanel operational={canPerformOperationalActions} waitingMessage={user.role === 'REPORTER' ? reporterWaitingMessage(incident) : null} actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} disabled={workspaceSaving || savingAction} inlineWorkspace={availableActions.includes('investigation') ? <InlineWorkspace values={investigationValues} files={investigationFiles} onFilesChange={setInvestigationFiles} onChange={editInvestigation} saving={workspaceSaving || savingAction} dirty={investigationDirty} error={workspaceError} errors={workspaceErrors} notice={workspaceNotice} resolutionOpen={resolutionOpen} resolutionValues={resolutionValues} onResolutionChange={event => { setResolutionValues(current => ({ ...current, [event.target.name]: event.target.value })); setWorkspaceError(''); setWorkspaceErrors({}) }} onCancelResolution={() => setResolutionOpen(false)} onSave={() => runWorkspace('save')} onResolve={() => runWorkspace('resolve')} onConfirm={() => runWorkspace('confirm')} /> : null} />
       <AuditTrail history={history} state={historyState} error={historyError} onRetry={loadIncident} />
       <div className="row g-3 mb-4">{sections.map((section) => <DetailSection key={section.title} section={section} incident={incident} />)}</div>
       <IncidentAttachments key={`${id}-${attachmentVersion}`} incidentId={id} canUpload={['REPORTER', 'IT_HANDLER', 'ADMIN'].includes(user.role)} onUploaded={() => refresh(true, false)} />
@@ -168,26 +232,28 @@ function IncidentDetails() {
   )
 }
 
-function ActionsPanel({ operational, waitingMessage, actionKeys, operationalActionKeys: activeOperationalActions, reviewCompleted, onOpen }) {
-  const primaryOrder = ['investigation', 'workNote', 'resolve']
+function ActionsPanel({ operational, waitingMessage, actionKeys: availableActionKeys, operationalActionKeys: activeOperationalActions, reviewCompleted, onOpen, inlineWorkspace, disabled }) {
+  const primaryOrder = ['workNote']
+  const actionKeys = availableActionKeys.filter(key => !['investigation', 'resolve'].includes(key))
   const orderedActions = operational ? [...primaryOrder.filter((key) => actionKeys.includes(key)), ...actionKeys.filter((key) => !primaryOrder.includes(key))] : actionKeys
   return <section className={`card section-card action-panel mb-3${operational ? ' work-on-incident' : ''}`} aria-labelledby="incident-actions-title">
     <div className="card-body">
       <h2 className="h5 text-dark mb-2" id="incident-actions-title">{operational ? 'Work on Incident' : 'Actions'}</h2>
       {!operational && <p className="text-secondary small mb-0">Available actions for the current incident status.</p>}
+      {inlineWorkspace}
       <div className="incident-action-grid mt-3">
         {orderedActions.map((key) => key === 'assign' ? <div key={key} className="assignment-guidance">
-          <button className="btn btn-primary btn-sm" aria-describedby="assign-action-help" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>
+          <button className="btn btn-primary btn-sm" aria-describedby="assign-action-help" disabled={disabled} onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>
           <p id="assign-action-help" className="small text-secondary mt-1 mb-0">{actionGuidance[key]}</p>
         </div> : operational && workActionDescriptions[key] ? <div className="work-action" key={key}>
-          <button className="btn btn-primary btn-sm" aria-describedby={`work-${key}-help`} onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>
+          <button className="btn btn-primary btn-sm" aria-describedby={`work-${key}-help`} disabled={disabled} onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>
           <p className="small text-secondary mt-1 mb-0" id={`work-${key}-help`}>{workActionDescriptions[key]}</p>
-        </div> : <button key={key} className="btn btn-primary btn-sm" onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>)}
+        </div> : <button key={key} className="btn btn-primary btn-sm" disabled={disabled} onClick={() => onOpen(key)}>{actionDefinitions[key].label}</button>)}
         {reviewCompleted && <span className="text-secondary small">Review completed</span>}
         {activeOperationalActions.length > 0 && <details className="more-actions align-self-start" onKeyDown={(event) => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary').focus() } }} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false }}>
           <summary className="btn btn-outline-secondary btn-sm">More Actions</summary>
           <div className="more-actions-menu border rounded bg-white shadow-sm p-2 mt-2">
-            {activeOperationalActions.map((key) => <button key={key} className="btn btn-sm btn-light text-start w-100 py-2" aria-labelledby={`action-${key}-label`} aria-describedby={`action-${key}-help`} onClick={(event) => { event.currentTarget.closest('details').open = false; onOpen(key) }}>
+            {activeOperationalActions.map((key) => <button key={key} className="btn btn-sm btn-light text-start w-100 py-2" disabled={disabled} aria-labelledby={`action-${key}-label`} aria-describedby={`action-${key}-help`} onClick={(event) => { event.currentTarget.closest('details').open = false; onOpen(key) }}>
               <span id={`action-${key}-label`} className="d-block fw-semibold">{actionDefinitions[key].label}</span>
               <span id={`action-${key}-help`} className="d-block small text-secondary fw-normal">{actionGuidance[key]}</span>
             </button>)}
@@ -229,10 +295,10 @@ function ActionModal({ currentAssessment, actionKey, action, user, values, error
   </>
 }
 
-function ActionField({ field: item, value, error, onChange, actionKey }) {
-  if (item.type === 'select') return <div className="col-12 col-md-6"><label className="form-label fw-semibold" htmlFor={`action-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><select id={`action-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-select${error ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription(item.name, `action-${item.name}`, error)}>{item.options.map((option) => <option key={option} value={option}>{formatOptionLabel(option)}</option>)}</select>{error && <div id={`action-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`action-${item.name}`} label={item.label} /></div>
+function ActionField({ field: item, value, error, onChange, actionKey, idPrefix = 'action' }) {
+  if (item.type === 'select') return <div className="col-12 col-md-6"><label className="form-label fw-semibold" htmlFor={`${idPrefix}-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><select id={`${idPrefix}-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-select${error ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription(item.name, `${idPrefix}-${item.name}`, error)}>{item.options.map((option) => <option key={option} value={option}>{formatOptionLabel(option)}</option>)}</select>{error && <div id={`${idPrefix}-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`${idPrefix}-${item.name}`} label={item.label} /></div>
   const Component = item.type === 'textarea' ? 'textarea' : 'input'
-  return <div className={item.type === 'textarea' ? 'col-12' : 'col-12 col-md-6'}><label className="form-label fw-semibold" htmlFor={`action-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><Component id={`action-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-control${error ? ' is-invalid' : ''}`} rows={item.type === 'textarea' ? 4 : undefined} aria-describedby={guidanceDescription(item.name, `action-${item.name}`, error)} />{error && <div id={`action-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`action-${item.name}`} label={item.label} /></div>
+  return <div className={item.type === 'textarea' ? 'col-12' : 'col-12 col-md-6'}><label className="form-label fw-semibold" htmlFor={`${idPrefix}-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><Component id={`${idPrefix}-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-control${error ? ' is-invalid' : ''}`} rows={item.type === 'textarea' ? 4 : undefined} aria-describedby={guidanceDescription(item.name, `${idPrefix}-${item.name}`, error)} />{error && <div id={`${idPrefix}-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`${idPrefix}-${item.name}`} label={item.label} /></div>
 }
 
 function DetailSection({ section, incident }) { return <section className="col-12 col-xl-6"><div className="card section-card h-100"><div className="card-body"><h2 className="h6 text-dark border-bottom pb-2 mb-3">{section.title}</h2><dl className="row mb-0">{section.fields.map(([label, fieldName, format]) => <DetailField key={fieldName} fieldName={fieldName} label={label} value={incident[fieldName]} format={format} />)}</dl></div></div></section> }
@@ -289,3 +355,33 @@ function hasRecordedValue(value) { return value !== null && value !== undefined 
 function formatOptionLabel(value) { if (value === 'MAJOR_CRITICAL_SECURITY_INCIDENT') return 'Major / Critical Security Incident'; return labelize(value).toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 
 export default IncidentDetails
+
+function InlineWorkspace({ values, files, onFilesChange, onChange, saving, dirty, error, errors, notice, resolutionOpen, resolutionValues, onResolutionChange, onCancelResolution, onSave, onResolve, onConfirm }) {
+  const mainFields = actionDefinitions.investigation.fields.filter(item => ['investigationDetails', 'actionsTaken'].includes(item.name))
+  const additionalFields = actionDefinitions.investigation.fields.filter(item => !['investigationDetails', 'actionsTaken'].includes(item.name))
+  const renderField = item => <ActionField key={item.name} idPrefix="investigation" actionKey="investigation" field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />
+  return <form className="inline-investigation" noValidate onSubmit={event => { event.preventDefault(); if (resolutionOpen) onConfirm(); else onSave() }}>
+    <fieldset disabled={saving}>
+      <legend className="visually-hidden">Investigation workspace</legend>
+      <p className="small text-secondary">Record diagnostic findings and observations. Save progress as you work.</p>
+      {error && <div className="alert alert-danger" role="alert">{error}</div>}
+      {notice && <div className="alert alert-success" role="status">{notice}</div>}
+      <div className="row g-3">{mainFields.map(renderField)}</div>
+      <div className="mt-3"><ImagePicker files={files} onChange={onFilesChange} disabled={saving} /></div>
+      <details className="mt-3" open={additionalFields.some(item => Boolean(errors[item.name])) || undefined}>
+        <summary className="small fw-semibold">Additional investigation details</summary>
+        <div className="row g-3 mt-1">{additionalFields.map(renderField)}</div>
+      </details>
+      <div className="d-flex flex-wrap gap-2 mt-3">
+        <button type="button" className="btn btn-primary" onClick={onSave} disabled={!dirty || saving}>{saving ? 'Saving…' : 'Save Progress'}</button>
+        {!resolutionOpen && <button type="button" className="btn btn-outline-primary" onClick={onResolve}>Resolve Incident</button>}
+      </div>
+      {resolutionOpen && <section className="inline-resolution mt-3" aria-labelledby="inline-resolution-title">
+        <h3 className="h6" id="inline-resolution-title">Resolution</h3>
+        <p className="small text-secondary">Mark the issue as fixed and move it to reporter validation. Any further investigation edits will be saved before resolution.</p>
+        <div className="row g-3">{actionDefinitions.resolve.fields.map(item => <ActionField key={item.name} idPrefix="resolution" actionKey="resolve" field={item} value={resolutionValues[item.name] || ''} error={errors[item.name]} onChange={onResolutionChange} />)}</div>
+        <div className="d-flex flex-wrap gap-2 mt-3"><button type="button" className="btn btn-outline-secondary" onClick={onCancelResolution}>Cancel Resolution</button><button type="submit" className="btn btn-primary">Confirm Resolution</button></div>
+      </section>}
+    </fieldset>
+  </form>
+}

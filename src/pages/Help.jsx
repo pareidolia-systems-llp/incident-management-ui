@@ -56,7 +56,7 @@ export default function Help() {
     <section className="help-comparison" aria-labelledby="action-comparison-title">
       <h2 id="action-comparison-title">Which action should I use?</h2>
       <div className="help-task-grid">{[
-        ['Record Investigation', 'What did you discover?', 'VPN certificate is expired.'],
+        ['Investigation / Save Progress', 'What did you discover?', 'VPN certificate is expired.'],
         ['Log Work on This Incident', 'What did you do?', 'Renewed certificate and restarted the VPN service.'],
         ['Resolve Incident', 'Is the issue now fixed?', 'Connectivity restored and ready for reporter validation.'],
         ['My Work Log', 'Work performed without an incident.', 'Checked backup jobs and server health.'],
@@ -116,7 +116,7 @@ export default function Help() {
       <p>Evidence Reference is text describing a screenshot, log, ticket, or approved internal record. The actual screenshot belongs in Attachments. Successful image uploads create their own Attachment Added audit entries; the evidence update remains a separate event.</p>
     </Section>
     <Section id="issue-still-persists"><p>On a Resolved incident, the original reporter can choose Issue Still Persists. Describe what is still not working, optionally reference evidence, and select Supporting Screenshots.</p><p>Feedback saves first and returns the incident to In Progress. Screenshots then upload separately. If an upload fails, your feedback and status remain saved; retry screenshots through Attachments. Activity shows the feedback and each successful attachment as separate events.</p></Section>
-    <Section id="work-logs"><p>IT Handler and Admin use Record Investigation for diagnostic findings and observations, Log Work on This Incident for actions performed without changing status, and Resolve Incident for the final fix. Less-frequent administrative updates are in More Actions.</p><h3>More Actions — IT Handler and Admin only</h3><dl className="help-more-actions">
+    <Section id="work-logs"><p>IT Handler and Admin use Investigation / Save Progress in the inline workspace for diagnostic findings and observations, Log Work on This Incident for actions performed without changing status, and Resolve Incident for the final fix. Less-frequent administrative updates are in More Actions.</p><h3>More Actions — IT Handler and Admin only</h3><dl className="help-more-actions">
       <dt>Reclassify Incident</dt><dd>Use when investigation shows the original Issue Type was incorrect.</dd>
       <dt>Reassess Severity</dt><dd>Use when the actual impact becomes clearer. A reason is required and recorded in Activity.</dd>
       <dt>Reassess Priority</dt><dd>Use when urgency changes after investigation. A reason is required and recorded in Activity.</dd>
@@ -139,7 +139,7 @@ export default function Help() {
 const tourSteps = [
   ['Create an Incident', 'Describe what happened and the affected system.', 'Choose the closest Issue Type and Category, then set Severity and Priority based on impact and urgency.'],
   ['Understand Issue Type, Category, Severity and Priority', 'Issue Type is the kind of incident or request; Category is the technical area.', 'Severity describes impact. Priority describes urgency. Reporter selections are the initial assessment; IT may reassess with an audited reason.'],
-  ['How IT Works on an Incident', 'Record Investigation captures diagnostic findings. Log Work on This Incident records actions without changing status.', 'Resolve Incident records the fix. More Actions contains administrative updates.'],
+  ['How IT Works on an Incident', 'Type findings and actions directly in Work on Incident, then select Save Progress. Log Work on This Incident records actions without changing status.', 'Resolve Incident saves unsaved investigation first and opens the resolution fields in the same workspace. More Actions contains administrative updates.'],
   ['Resolution and Reporter Validation', 'The original reporter tests the fix when the incident is Resolved.', 'Validate the resolution if it works, then close the incident.'],
   ['What Happens When "Issue Still Persists"', 'The original reporter describes what still fails and can add supporting screenshots.', 'Feedback returns the incident to In Progress. If screenshots fail to upload, retry through Attachments.'],
   ['My Work Log', 'IT Handler and Admin can record their own standalone work, separate from an incident.', 'Work time defaults to now and can be adjusted for earlier work. Each person sees only their own entries.'],
@@ -153,7 +153,7 @@ function QuickTour() {
     <h2 id="quick-tour-title">Quick Tour</h2>
     <div className="help-journeys">
       <details><summary>Reporter journey</summary><ol><li>Create Incident</li><li>Track Progress</li><li>Test the Resolution</li><li>Validate OR choose Issue Still Persists</li><li>Close the Incident</li></ol></details>
-      <details><summary>IT journey</summary><ol><li>Review and classify</li><li>Record Investigation</li><li>Log Work on This Incident</li><li>Use More Actions when necessary</li><li>Resolve Incident</li><li>Wait for reporter validation</li></ol></details>
+      <details><summary>IT journey</summary><ol><li>Review and classify</li><li>Investigation / Save Progress</li><li>Log Work on This Incident</li><li>Use More Actions when necessary</li><li>Resolve Incident</li><li>Wait for reporter validation</li></ol></details>
       <details><summary>Independent IT work</summary><p>My Work Log = work performed by IT that is not associated with an incident.</p></details>
     </div>
     <nav className="tour-step-nav" aria-label="Quick Tour steps">{tourSteps.map(([name], index) => <button key={name} className={step === index ? 'current' : ''} aria-current={step === index ? 'step' : undefined} aria-label={`Step ${index + 1}: ${name}`} onClick={() => setStep(index)}>{index + 1}</button>)}</nav>

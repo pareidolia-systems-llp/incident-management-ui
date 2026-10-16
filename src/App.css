@@ -269,3 +269,9 @@ details.help-section { margin-top: .75rem; padding: 0; }
 .help-more-actions dd { font-size: .875rem; margin-bottom: .8rem; }
 .help-faq > .help-field > summary { padding: .85rem 1rem; }
 @media (max-width: 575.98px) { .help-task-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.inline-investigation, .inline-investigation fieldset { min-width: 0; }
+.inline-investigation textarea { width: 100%; min-height: 7rem; }
+.inline-investigation .btn { white-space: normal; max-width: 100%; }
+.inline-resolution { padding: 1rem; border: 1px solid #cedbe6; border-radius: .4rem; background: #f8fafc; }
+.work-on-incident .work-action { flex: 0 1 22rem; padding: 0; border: 0; background: transparent; }
