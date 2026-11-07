@@ -7,7 +7,7 @@ import { issueTypes, issueTypeGuide, reporterDepartments, categoriesByIssueType,
 import { helpSections, roleGuides, lifecycleStages, fieldGroups, scenarios, faqs } from '../utils/portalHelp'
 import { labelize } from '../utils/incident'
 
-const topicLabels = { purpose: 'Portal Purpose', 'incident-types': 'Incident Types', 'field-guide': 'Field Guide', screenshots: 'Screenshots & Evidence', 'after-submission': 'After Submission', 'audit-trail': 'Audit Trail', 'monthly-reports': 'Monthly Reports', scenarios: 'Common Scenarios', faq: 'FAQ' }
+const topicLabels = { 'sign-in': 'Sign In / Sign Out', assignment: 'Assignment', notifications: 'Notifications', availability: 'Development Features', purpose: 'Portal Purpose', 'incident-types': 'Incident Types', 'field-guide': 'Field Guide', screenshots: 'Screenshots & Evidence', 'after-submission': 'After Submission', 'audit-trail': 'Audit Trail', 'monthly-reports': 'Monthly Reports', scenarios: 'Common Scenarios', faq: 'FAQ' }
 
 const sharedFields = { severity: 'severity', priority: 'priority', title: 'title', description: 'description', 'reporter-department': 'reporterDepartment', 'desk-number': 'deskNumber', 'issue-type': 'issueType', category: 'category', 'investigation-details': 'investigationDetails', 'root-cause': 'rootCause', 'actions-taken': 'actionsTaken', 'containment-action': 'containmentAction', 'corrective-action': 'correctiveAction', remarks: 'remarks', resolution: 'resolutionDetails', 'review-details': 'reviewDetails', 'lessons-learned': 'lessonsLearned', 'preventive-action': 'preventiveAction' }
 
@@ -52,6 +52,7 @@ export default function Help() {
         ['monthly-reports', 'Generate Reports', 'Filter incidents by month or date/time range'],
       ].map(([id, title, text]) => <Link className="help-task-card" key={id} to={'/help#' + id} aria-current={hash === '#' + id ? 'location' : undefined}><strong>{title}<span aria-hidden="true"> →</span></strong><span>{text}</span></Link>)}</div>
     </section>
+    <aside className="help-callout" aria-label="Guide availability"><p className="mb-0">This guide describes the current production workflow. Employee Management, employee-based assignment and case-specific access controls are development features awaiting authorization and release. Use the production instructions below.</p></aside>
     <QuickTour />
     <section className="help-comparison" aria-labelledby="action-comparison-title">
       <h2 id="action-comparison-title">Which action should I use?</h2>
@@ -70,6 +71,10 @@ export default function Help() {
       </nav>
       <div className="help-mobile-topics"><label htmlFor="help-jump">Jump to section</label><select id="help-jump" className="form-select" value={helpSections.some(([id]) => hash === '#' + id) ? hash.slice(1) : ''} onChange={event => { if (event.target.value) navigate('/help#' + event.target.value) }}><option value="">Choose a topic</option>{helpSections.map(([id, title]) => <option key={id} value={id}>{topicLabels[id] || title}</option>)}</select></div>
     </div>
+    <Section id="sign-in">
+      <ol><li>Open the portal and select Sign in with Google.</li><li>Choose your approved company Google account. Your name and portal role appear after sign-in.</li><li>Use Sign Out in the header when finished, especially on a shared computer.</li></ol>
+      <p>If the wrong account is shown, sign out and choose the correct company account. Never share a password, verification code or session cookie with support.</p>
+    </Section>
     <Section id="quick-start">
       <ol className="help-quick-steps">
         <li>Sign in with your company Google account.</li><li>Open Create Incident (Reporter or Admin).</li>
@@ -81,6 +86,22 @@ export default function Help() {
       </ol>
       <Link className="btn btn-primary" to={canCreate ? '/incidents/new' : '/incidents'}>{canCreate ? 'Create Incident' : 'View Incidents'}</Link>
     </Section>
+    <Section id="assignment">
+      <p>New incidents are automatically assigned to the configured IT owner and start as Assigned. The reporter does not choose an employee while creating an incident in the current production workflow.</p>
+      <p>For an existing Open incident, IT Handler or Admin may use Assign Incident when that action is offered. Enter the approved owner in Assigned Owner and add useful remarks. Check the saved owner and Activity entry after submitting. If an ownership change is needed and the action is unavailable, contact IT.</p>
+      <p>Employee search, proposed handlers, authorized triage and version-checked reassignment are development workflows awaiting release.</p>
+    </Section>
+    <Section id="notifications">
+      <p>Track progress in Incident Details and Activity &amp; Work Log. Status messages and warnings on the page confirm saves, failures and screenshot-upload results. The current workflow has no separate in-app notification inbox.</p>
+      <p>New incidents generate generic email notifications to the configured IT, HR and relevant department recipients. Emails identify the incident number and ask recipients to sign in; sensitive incident details are excluded. An email does not grant portal access.</p>
+      <p>Portal-link email improvements are awaiting release. Until then, open the portal through your usual trusted address and find the incident number. Do not expect email for every status change, comment or reassignment.</p>
+      <p>If an email is delayed, use the saved incident number to check the portal before creating another report. Ask IT to check delivery if needed.</p>
+    </Section>
+    <Section id="availability">
+      <p>Employee IDs and employee records, employee-based handler selection, trusted Standard or Restricted classification, and case-specific permissions are being verified in development. They are not part of these production instructions.</p>
+      <p>HR colleagues follow the permissions of their assigned portal role. An HR job title or department-head designation alone does not grant incident administration or employee-maintenance access. Routine employee changes should use the approved HR/IT process until the portal workflow is released.</p>
+      <p>In the development design, a reporter can suggest a handler. That suggestion gives no incident access. Authorized staff must classify the case and check permissions and handler eligibility before confirming assignment. Availability will be announced after authorization and testing.</p>
+    </Section>
     <Section id="purpose"><p>This portal records internal IT faults, service requests, suspected or confirmed information-security incidents, and major security incidents. It keeps the reported impact, investigation, evidence, resolution, and review together so authorized colleagues can follow the work.</p></Section>
     <Section id="lifecycle">
       <ol className="help-lifecycle">{lifecycleStages.map(([title, text]) => <li key={title}><h3>{title}</h3><p>{text}</p></li>)}</ol>
@@ -90,7 +111,7 @@ export default function Help() {
       <h3>{label}</h3><p>{text}</p>
       <div className="help-role-actions">{links.map(([anchor, name]) => <Link className="btn btn-sm btn-outline-secondary" key={anchor} to={'/help#' + anchor}>{name}</Link>)}</div>
     </section>)}</div><aside className="help-info" aria-label="About role permissions"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7v1" /></svg><p>Available actions depend on your role, identity, and the current incident status. Help links do not grant additional permissions; the application continues to enforce access rules.</p></aside></Section>
-    <Section id="incident-types"><p>Issue Type describes the kind of incident or request. Category describes the technical area. For example, an IT Issue involving a Windows service belongs to Server / Infrastructure; MySQL connectivity belongs to Database; antivirus belongs to Security / Endpoint. Keep Other for cases without a closer match.</p><div className="help-grid">{issueTypes.map(type => <section className="help-card help-type-card" key={type}>
+    <Section id="incident-types"><p>Issue Type describes the kind of problem or request. It is separate from the trusted confidentiality classification being developed. Choosing a department, category or issue type does not establish permission to view an incident.</p><p>Issue Type describes the kind of incident or request. Category describes the technical area. For example, an IT Issue involving a Windows service belongs to Server / Infrastructure; MySQL connectivity belongs to Database; antivirus belongs to Security / Endpoint. Keep Other for cases without a closer match.</p><div className="help-grid">{issueTypes.map(type => <section className="help-card help-type-card" key={type}>
       <h3>{labelize(type)}</h3><p>{issueTypeGuide[type].meaning}</p><p><strong>Example:</strong> {issueTypeGuide[type].example}</p>
       <details><summary>Categories for {labelize(type)}</summary><ul>{categoriesByIssueType[type].map(category => <li key={category}>{category}</li>)}</ul></details>
     </section>)}</div></Section>
@@ -153,7 +174,7 @@ function QuickTour() {
     <h2 id="quick-tour-title">Quick Tour</h2>
     <div className="help-journeys">
       <details><summary>Reporter journey</summary><ol><li>Create Incident</li><li>Track Progress</li><li>Test the Resolution</li><li>Validate OR choose Issue Still Persists</li><li>Close the Incident</li></ol></details>
-      <details><summary>IT journey</summary><ol><li>Review and classify</li><li>Investigation / Save Progress</li><li>Log Work on This Incident</li><li>Use More Actions when necessary</li><li>Resolve Incident</li><li>Wait for reporter validation</li></ol></details>
+      <details><summary>IT journey</summary><ol><li>Review the incident type</li><li>Investigation / Save Progress</li><li>Log Work on This Incident</li><li>Use More Actions when necessary</li><li>Resolve Incident</li><li>Wait for reporter validation</li></ol></details>
       <details><summary>Independent IT work</summary><p>My Work Log = work performed by IT that is not associated with an incident.</p></details>
     </div>
     <nav className="tour-step-nav" aria-label="Quick Tour steps">{tourSteps.map(([name], index) => <button key={name} className={step === index ? 'current' : ''} aria-current={step === index ? 'step' : undefined} aria-label={`Step ${index + 1}: ${name}`} onClick={() => setStep(index)}>{index + 1}</button>)}</nav>

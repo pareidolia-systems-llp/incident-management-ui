@@ -66,7 +66,7 @@ test('help preserves shared definitions, required people examples, security and 
   await screen.findByRole('heading', { name: 'How to Use This Portal' })
   expect(screen.getByText(fieldGuidance.rootCause.text)).toBeTruthy()
   const people = document.getElementById('impacted-users').textContent
-  for (const example of ['Operations Team', 'SPO Operations Team', 'R&D Department', 'IT Team', 'HR Department', 'Finance Team', 'Development Team', 'All Office Users', 'Debolina - Development']) expect(people).toContain(example)
+  for (const example of ['Operations Team', 'SPO Operations Team', 'R&D Department', 'IT Team', 'HR Department', 'Finance Team', 'Development Team', 'All Office Users', 'Example employee - Development']) expect(people).toContain(example)
   expect(document.getElementById('lifecycle').textContent).toContain('Only the original reporter can validate')
   expect(document.getElementById('lifecycle').textContent).toContain('status remains Closed')
   expect(screen.getByLabelText('Sensitive information warning').textContent).toContain('session cookies')
@@ -168,4 +168,26 @@ test('role journeys, comparison and FAQ clearly distinguish actions', async () =
   fireEvent.click(screen.getByRole('button', { name: 'Step 6: My Work Log' }))
   expect(screen.getByText('6 of 7')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Step 6: My Work Log' }).getAttribute('aria-current')).toBe('step')
+})
+
+
+test('production guide separates current assignment and email from development-only access workflows', async () => {
+  render(<App />)
+  await screen.findByRole('heading', { name: 'How to Use This Portal' })
+  expect(screen.getByLabelText('Guide availability').textContent).toContain('awaiting authorization and release')
+  expect(document.getElementById('assignment').textContent).toContain('automatically assigned')
+  expect(document.getElementById('notifications').textContent).toContain('no separate in-app notification inbox')
+  expect(document.getElementById('notifications').textContent).toContain('Portal-link email improvements are awaiting release')
+  expect(document.getElementById('availability').textContent).toContain('HR colleagues follow the permissions of their assigned portal role')
+  expect(document.getElementById('sign-in').textContent).toContain('Sign Out')
+  expect(apiClient.post).not.toHaveBeenCalled()
+})
+
+test.each(['sign-in', 'assignment', 'notifications', 'availability'])('new topic %s is reachable through mobile topic navigation', async id => {
+  render(<App />)
+  await screen.findByRole('heading', { name: 'How to Use This Portal' })
+  fireEvent.change(screen.getByLabelText('Jump to section'), { target: { value: id } })
+  expect(window.location.hash).toBe('#' + id)
+  expect(document.getElementById(id).open).toBe(true)
+  expect(document.activeElement).toBe(document.querySelector('#' + id + ' > summary'))
 })
