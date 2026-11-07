@@ -1,9 +1,9 @@
 import { issueTypes, reporterDepartments, issueTypeGuide, levels, categoriesByIssueType } from '../utils/incidentOptions'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ImagePicker from '../components/ImagePicker'
 import { uploadAttachments } from '../api/attachments'
-import { createIncident } from '../api/incidents'
+import { createIncident, getResponsibleDepartments } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import PageTitle from '../components/PageTitle'
 import FieldGuidance from '../components/FieldGuidance'
@@ -12,7 +12,7 @@ import { guidanceDescription } from '../utils/incidentGuidance'
 import { getErrorMessage, labelize } from '../utils/incident'
 
 const initialValues = {
-  reporterDepartment: '', deskNumber: '', title: '', description: '', issueType: '', category: '', affectedSystem: '', impactedUserOrDepartment: '', severity: '', priority: '',
+  reporterDepartment: '', responsibleDepartmentId: '', deskNumber: '', title: '', description: '', issueType: '', category: '', affectedSystem: '', impactedUserOrDepartment: '', severity: '', priority: '',
 }
 
 const requiredFields = ['title', 'description', 'issueType', 'category', 'severity', 'priority', 'affectedSystem']
@@ -25,7 +25,22 @@ function CreateIncident() {
   const [submitError, setSubmitError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  if (!['REPORTER', 'ADMIN'].includes(user.role)) {
+  const [departments, setDepartments] = useState(null)
+  const [departmentLookupFailed, setDepartmentLookupFailed] = useState(false)
+  const canCreate = ['REPORTER', 'ADMIN'].includes(user.role)
+
+  useEffect(() => {
+    if (!canCreate) return
+    let current = true
+    getResponsibleDepartments().then((options) => {
+      if (current) setDepartments(options)
+    }).catch(() => {
+      if (current) setDepartmentLookupFailed(true)
+    })
+    return () => { current = false }
+  }, [canCreate])
+
+  if (!canCreate) {
     return <><PageTitle title="Access denied" description="You do not have permission to create incidents." /><div className="card section-card"><div className="card-body"><button className="btn btn-outline-secondary" onClick={() => navigate('/incidents')}>Back to Incidents</button></div></div></>
   }
 
@@ -56,7 +71,9 @@ function CreateIncident() {
     setSubmitError('')
     setErrors({})
     try {
-      const createdIncident = await createIncident(values)
+      const { responsibleDepartmentId, ...payload } = values
+      if (responsibleDepartmentId) payload.responsibleDepartmentId = Number(responsibleDepartmentId)
+      const createdIncident = await createIncident(payload)
       if (!createdIncident?.id) throw new Error('Missing incident identifier')
       let uploadWarning = ''
       if (files.length) {
@@ -67,7 +84,10 @@ function CreateIncident() {
     } catch (requestError) {
       const fieldErrors = getBackendFieldErrors(requestError)
       if (Object.keys(fieldErrors).length > 0) setErrors(fieldErrors)
-      setSubmitError(getErrorMessage(requestError, 'The incident could not be created. Please review the form and try again.'))
+      const departmentRejected = requestError.response?.status === 400
+        && requestError.response.data?.message === 'Select an active responsible department.'
+      setSubmitError(departmentRejected ? requestError.response.data.message
+        : getErrorMessage(requestError, 'The incident could not be created. Please review the form and try again.'))
       setSubmitting(false)
     }
   }
@@ -79,6 +99,21 @@ function CreateIncident() {
       <form noValidate onSubmit={handleSubmit}>
         {submitError && <div className="alert alert-danger" role="alert">{submitError}</div>}
         <FormSection title="Reporter Information"><div className="row g-3"><AuthenticatedReporter user={user} /><SelectField label="Reporter Department" name="reporterDepartment" options={reporterDepartments} formatOption={(option) => option} columnClass="col-12 col-lg-6" values={values} errors={errors} onChange={handleChange} /><TextField label="Desk Number" name="deskNumber" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
+        <FormSection title="Responsible Department">
+          <label className="form-label fw-semibold" htmlFor="responsibleDepartmentId">Responsible Department (optional)</label>
+          <select id="responsibleDepartmentId" name="responsibleDepartmentId" className="form-select"
+            value={values.responsibleDepartmentId} onChange={handleChange}
+            disabled={!departments?.length || submitting} aria-describedby="responsible-department-help">
+            <option value="">No department selected</option>
+            {departments?.map(({ id, displayName }) => <option key={id} value={id}>{displayName}</option>)}
+          </select>
+          <div id="responsible-department-help" className="form-text" role="status">
+            {departmentLookupFailed ? 'Responsible departments are unavailable. You can still submit the incident.'
+              : !departments ? 'Loading responsible departments…'
+              : !departments.length ? 'No responsible departments are available.'
+              : 'Select the department responsible for this issue. Your reporter department stays the same.'}
+          </div>
+        </FormSection>
         <FormSection title="Incident Details"><div className="row g-3"><TextField label="Title" name="title" required values={values} errors={errors} onChange={handleChange} /><TextField label="Description" name="description" required as="textarea" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <FormSection title="Classification & Priority"><div className="row g-3"><SelectField label="Issue Type" name="issueType" options={issueTypes} required values={values} errors={errors} onChange={handleChange} /><CategoryField issueType={values.issueType} values={values} errors={errors} onChange={handleChange} /><SelectField label="Severity" name="severity" options={levels} required values={values} errors={errors} onChange={handleChange} /><SelectField label="Priority" name="priority" options={levels} required values={values} errors={errors} onChange={handleChange} /></div><IssueTypeGuide /></FormSection>
         <FormSection title="Affected System / Impact"><div className="row g-3"><TextField label="Affected System" name="affectedSystem" required values={values} errors={errors} onChange={handleChange} /><TextField label="Impacted User / Department" name="impactedUserOrDepartment" values={values} errors={errors} onChange={handleChange} /></div></FormSection>

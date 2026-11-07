@@ -118,6 +118,38 @@ test('create without images preserves JSON and does not submit actor fields', as
   expect(url).toBe('/api/incidents')
   expect(payload.title).toBe('VPN')
   expect(payload.reportedBy).toBeUndefined()
+  expect(payload).not.toHaveProperty('responsibleDepartmentId')
+})
+test('submits an independent responsible department ID and handles a rejected selection', async () => {
+  apiClient.get.mockResolvedValue({ data: [{ id: 7, displayName: 'IT' }, { id: 9, displayName: 'HR' }] })
+  apiClient.post.mockRejectedValueOnce({ response: { status: 400, data: { message: 'Select an active responsible department.' } } })
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByRole('option', { name: 'IT' })
+  expect(apiClient.get).toHaveBeenCalledWith('/api/incidents/responsible-departments')
+  fireEvent.change(screen.getByLabelText('Reporter Department'), { target: { value: 'R&D' } })
+  const responsible = screen.getByLabelText('Responsible Department (optional)')
+  fireEvent.change(responsible, { target: { value: '7' } })
+  fillCreate()
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  expect((await screen.findByRole('alert')).textContent).toContain('Select an active responsible department.')
+  expect(apiClient.post).toHaveBeenCalledWith('/api/incidents', expect.objectContaining({
+    reporterDepartment: 'R&D', responsibleDepartmentId: 7, issueType: 'IT_ISSUE',
+  }))
+  expect(screen.getByLabelText(/^Title/).value).toBe('VPN')
+  fireEvent.change(responsible, { target: { value: '' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post.mock.calls[1][1]).not.toHaveProperty('responsibleDepartmentId')
+})
+test('creation still works when the department lookup is unavailable', async () => {
+  apiClient.get.mockRejectedValueOnce(new Error('Lookup unavailable'))
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByText(/Responsible departments are unavailable/)
+  expect(screen.getByLabelText('Responsible Department (optional)').disabled).toBe(true)
+  fillCreate()
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post.mock.calls[0][1]).not.toHaveProperty('responsibleDepartmentId')
 })
 test.each([false, true])('creation remains successful when upload failure is %s', async (failure) => {
   apiClient.post.mockImplementation(async (url) => {
