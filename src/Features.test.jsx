@@ -22,7 +22,7 @@ beforeEach(() => {
   apiClient.get.mockImplementation(async (url) => ({ data: url.endsWith('/attachments') || url.endsWith('/history') ? [] : url.endsWith('/12') ? incident : [] }))
   apiClient.post.mockResolvedValue({ data: incident })
 })
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.unstubAllEnvs() })
 function withUser(component, role = 'REPORTER', route = '/') {
   return render(<AuthContext.Provider value={{ user: { ...user, role }, logout }}><MemoryRouter initialEntries={[route]}>{component}</MemoryRouter></AuthContext.Provider>)
 }
@@ -140,6 +140,24 @@ test('submits an independent responsible department ID and handles a rejected se
   fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
   await screen.findByText('Created incident')
   expect(apiClient.post.mock.calls[1][1]).not.toHaveProperty('responsibleDepartmentId')
+})
+test('routine HR is opt-in and submits the HR type with confidentiality guidance', async () => {
+  vi.stubEnv('VITE_ROUTINE_HR_ISSUES_ENABLED', 'true')
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  fillCreate()
+  fireEvent.change(screen.getByLabelText(/^Issue Type/), { target: { value: 'HR_ISSUE' } })
+  expect(screen.getByText('For routine HR requests only. Do not enter confidential complaints, medical details, salary details or other sensitive information. Contact the HR Head directly for confidential matters.')).toBeTruthy()
+  fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: 'Routine HR Request' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post).toHaveBeenCalledWith('/api/incidents',
+    expect.objectContaining({ issueType: 'HR_ISSUE', category: 'Routine HR Request' }))
+})
+test('older-backend builds omit the HR issue option', async () => {
+  vi.stubEnv('VITE_ROUTINE_HR_ISSUES_ENABLED', 'false')
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByText('No responsible departments are available.')
+  expect(screen.queryByRole('option', { name: 'HR Issue' })).toBeNull()
 })
 test('creation still works when the department lookup is unavailable', async () => {
   apiClient.get.mockRejectedValueOnce(new Error('Lookup unavailable'))

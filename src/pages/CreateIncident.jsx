@@ -1,4 +1,4 @@
-import { issueTypes, reporterDepartments, issueTypeGuide, levels, categoriesByIssueType } from '../utils/incidentOptions'
+import { issueTypes, reporterDepartments, issueTypeGuide, levels, categoriesByIssueType, routineHrGuidance } from '../utils/incidentOptions'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ImagePicker from '../components/ImagePicker'
@@ -27,6 +27,8 @@ function CreateIncident() {
 
   const [departments, setDepartments] = useState(null)
   const [departmentLookupFailed, setDepartmentLookupFailed] = useState(false)
+  const routineHrEnabled = import.meta.env.VITE_ROUTINE_HR_ISSUES_ENABLED === 'true'
+  const createIssueTypes = routineHrEnabled ? [...issueTypes, 'HR_ISSUE'] : issueTypes
   const canCreate = ['REPORTER', 'ADMIN'].includes(user.role)
 
   useEffect(() => {
@@ -61,6 +63,11 @@ function CreateIncident() {
     if (submitting) return
 
     const validationErrors = validate(values)
+    const responsibleDepartment = departments?.find(({ id }) => String(id) === values.responsibleDepartmentId)
+    if (routineHrEnabled && /^(hr|human resources)$/i.test(responsibleDepartment?.displayName.trim() ?? '')
+      && ['IT_ISSUE', 'SERVICE_REQUEST'].includes(values.issueType)) {
+      validationErrors.issueType = 'Select HR Issue for a routine request directed to HR.'
+    }
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       setSubmitError('Please correct the highlighted fields before submitting.')
@@ -109,27 +116,28 @@ function CreateIncident() {
           </select>
           <div id="responsible-department-help" className="form-text" role="status">
             {departmentLookupFailed ? 'Responsible departments are unavailable. You can still submit the incident.'
-              : !departments ? 'Loading responsible departments…'
+              : !departments ? 'Loading responsible departmentsâ€¦'
               : !departments.length ? 'No responsible departments are available.'
               : 'Select the department responsible for this issue. Your reporter department stays the same.'}
           </div>
         </FormSection>
+        <FormSection title="Classification & Priority"><div className="row g-3"><SelectField label="Issue Type" name="issueType" options={createIssueTypes} required values={values} errors={errors} onChange={handleChange} /><CategoryField issueType={values.issueType} values={values} errors={errors} onChange={handleChange} /><SelectField label="Severity" name="severity" options={levels} required values={values} errors={errors} onChange={handleChange} /><SelectField label="Priority" name="priority" options={levels} required values={values} errors={errors} onChange={handleChange} /></div><IssueTypeGuide types={createIssueTypes} /></FormSection>
+        {values.issueType === 'HR_ISSUE' && <p className="alert alert-warning">{routineHrGuidance}</p>}
         <FormSection title="Incident Details"><div className="row g-3"><TextField label="Title" name="title" required values={values} errors={errors} onChange={handleChange} /><TextField label="Description" name="description" required as="textarea" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
-        <FormSection title="Classification & Priority"><div className="row g-3"><SelectField label="Issue Type" name="issueType" options={issueTypes} required values={values} errors={errors} onChange={handleChange} /><CategoryField issueType={values.issueType} values={values} errors={errors} onChange={handleChange} /><SelectField label="Severity" name="severity" options={levels} required values={values} errors={errors} onChange={handleChange} /><SelectField label="Priority" name="priority" options={levels} required values={values} errors={errors} onChange={handleChange} /></div><IssueTypeGuide /></FormSection>
         <FormSection title="Affected System / Impact"><div className="row g-3"><TextField label="Affected System" name="affectedSystem" required values={values} errors={errors} onChange={handleChange} /><TextField label="Impacted User / Department" name="impactedUserOrDepartment" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <FormSection title="Attachments"><ImagePicker files={files} onChange={setFiles} disabled={submitting} /></FormSection>
-        <div className="d-flex flex-wrap justify-content-end gap-2"><button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/incidents')} disabled={submitting}>Cancel</button><button type="submit" className="btn btn-primary" disabled={submitting}>{submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{submitting ? 'Creating Incident…' : 'Create Incident'}</button></div>
+        <div className="d-flex flex-wrap justify-content-end gap-2"><button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/incidents')} disabled={submitting}>Cancel</button><button type="submit" className="btn btn-primary" disabled={submitting}>{submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{submitting ? 'Creating Incidentâ€¦' : 'Create Incident'}</button></div>
       </form>
     </>
   )
 }
 
-function IssueTypeGuide() {
+function IssueTypeGuide({ types }) {
   return <aside className="card bg-light border mt-3" aria-labelledby="issue-type-guide-title">
     <div className="card-body p-3">
       <h3 className="h6 mb-3" id="issue-type-guide-title">Choosing an Issue Type</h3>
       <dl className="small text-secondary mb-0">
-        {issueTypes.map((type, index) => <div className={`row g-1${index ? ' border-top pt-2 mt-2' : ''}`} key={type}>
+        {types.map((type, index) => <div className={`row g-1${index ? ' border-top pt-2 mt-2' : ''}`} key={type}>
           <dt className="col-12 col-md-3">{type === 'IT_ISSUE' ? 'IT Issue' : formatEnumLabel(type)}</dt>
           <dd className="col-12 col-md-9 mb-0">
             <div>{issueTypeGuide[type].meaning}</div>
@@ -195,6 +203,7 @@ function getBackendFieldErrors(error) {
 }
 
 function formatEnumLabel(value) {
+  if (value === 'HR_ISSUE') return 'HR Issue'
   if (value === 'MAJOR_CRITICAL_SECURITY_INCIDENT') return 'Major / Critical Security Incident'
   return labelize(value).toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
