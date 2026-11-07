@@ -1,9 +1,9 @@
 // Documentation only. Permissions and workflow remain in the existing application.
 export const helpSections = [
-  ['quick-start', 'Creating an Incident'], ['purpose', 'What This Portal Is For'],
+  ['sign-in', 'Sign In and Sign Out'], ['quick-start', 'Creating an Incident'], ['purpose', 'What This Portal Is For'],
   ['lifecycle', 'Resolution and Validation'], ['roles', 'Roles and Permissions'],
-  ['incident-types', 'Understanding Classification'], ['field-guide', 'Complete Field Guide'],
-  ['screenshots', 'Attachments'], ['after-submission', 'What Happens After Submission'],
+  ['incident-types', 'Understanding Incident Types'], ['field-guide', 'Complete Field Guide'],
+  ['screenshots', 'Attachments'], ['after-submission', 'What Happens After Submission'], ['assignment', 'Assignment and Ownership'], ['notifications', 'Notifications'], ['availability', 'Development Features'],
   ['work-logs', 'Investigation and Work Logs'], ['issue-still-persists', 'Issue Still Persists'], ['my-work-log', 'My Work Log'], ['audit-trail', 'Understanding the Audit Trail'], ['monthly-reports', 'Monthly Incident Reports'],
   ['scenarios', 'Common Scenarios'], ['faq', 'Frequently Asked Questions'],
 ]
@@ -25,6 +25,7 @@ export const roleGuides = [
 export const lifecycleStages = [
   ['Create Incident', 'The signed-in reporter submits the details. A ticket number is generated and the incident immediately starts as Assigned.'],
   ['Assignment', 'The configured default IT owner is assigned automatically. Assign Incident is offered to IT Handler or Admin for Open incidents.'],
+  ['Open', 'An existing Open incident is waiting for assignment. New reports normally start as Assigned under the current automatic-assignment workflow.'],
   ['Investigation', 'IT Handler or Admin records findings and actions. Updating investigation from Assigned moves the incident to In Progress.'],
   ['Resolution', 'IT Handler or Admin records the fix and marks the incident Resolved. Resolution can follow Assigned directly or follow In Progress.'],
   ['Validation', 'Only the original reporter can validate a Resolved incident. They test the fix and record Validation Details; the status becomes Validated.'],
@@ -40,7 +41,7 @@ export const fieldGroups = [
     ['reporter-department', 'Reporter Department', 'The department of the employee reporting the incident.', 'Optional; choose your department from the existing dropdown.', 'Operations (Annotation). The complete set of available choices is shown below.', 'Inventing a dropdown value or treating this as the team affected by the problem.'],
     ['desk-number', 'Desk Number', 'A physical desk, room, workstation, or relevant office location.', 'Optional. Leave blank if there is no meaningful fixed location.', 'Desk D-214; Meeting Room 3; Workstation OPS-07.', 'Putting a person’s name or a password in a location field.'],
     ['affected-system', 'Affected System', 'WHAT is affected: the application, account, device, network, or service.', 'Required when reporting.', 'HR Portal; VPN; Office Wi-Fi; Laptop D-214; Incident Management Portal; Company email.', 'Putting the affected person’s name here. Use Impacted User / Department for WHO.'],
-    ['impacted-users', 'Impacted User / Department', 'WHO is affected: one employee, multiple employees, a team, a department, a business function, or all office users.', 'Optional when reporting; describe the affected group as precisely as you can.', 'Operations Team; SPO Operations Team; R&D Department; IT Team; HR Department; Finance Team; Development Team; All Office Users; Debolina - Development.', 'Putting only a system name here. “VPN” identifies WHAT, not WHO. These are free-text examples, not Reporter Department dropdown choices.'],
+    ['impacted-users', 'Impacted User / Department', 'WHO is affected: one employee, multiple employees, a team, a department, a business function, or all office users.', 'Optional when reporting; describe the affected group as precisely as you can.', 'Operations Team; SPO Operations Team; R&D Department; IT Team; HR Department; Finance Team; Development Team; All Office Users; Example employee - Development.', 'Putting only a system name here. “VPN” identifies WHAT, not WHO. These are free-text examples, not Reporter Department dropdown choices.'],
     ['issue-type', 'Issue Type', 'The kind of issue or request based on what is currently known.', 'Required when reporting; authorized handlers can reclassify as new information becomes available.', 'IT Issue for VPN failure; Suspected Security Incident for an unexpected MFA prompt.', 'Calling an unconfirmed concern a confirmed security compromise.'],
     ['category', 'Category', 'The area that best fits the selected Issue Type.', 'Required. Choose Issue Type first; changing it clears Category so you can select a matching value.', 'IT Issue → Network / Connectivity; Service Request → Software Installation.', 'Assuming the same categories are available for every incident type.'],
     ['severity', 'Severity', 'How serious is the IMPACT on people, systems, or information?', 'Required when reporting; handlers can reassess impact later.', 'Low: one minor inconvenience. Medium: limited disruption. High: a team unable to work. Critical: widespread or severe business/security impact.', 'Using urgency alone to choose severity. Examples are guidance, not automatic classification rules.'],
@@ -78,6 +79,11 @@ export const scenarios = [
 ]
 
 export const faqs = [
+  ['Why can I not sign in?', 'Choose your approved company Google account. If the page keeps returning to sign-in, allow the portal cookies, close extra sign-in tabs and try once more. Contact IT with the time and error message; never share your password or verification code.'],
+  ['What should I do after Access denied?', 'Check that you selected the correct company account. Your portal role and the incident workflow control the available actions. Ask IT to review access; changing a URL or following a Help link does not grant permission.'],
+  ['What if the service is unavailable?', 'If you have an incident number, check Incident Details before submitting again. Keep a note of your text and retry when the service is available. Report persistent connection errors to IT.'],
+  ['What if my report download is empty?', 'Check the original Reported At date, the selected month or date/time range, and your access. An empty report can be valid when no incidents match.'],
+
   ['What is the difference between Investigation and Work Log?', 'Investigation = what IT discovered. Log Work on This Incident = what IT did. Both belong to the incident; a work note does not change its status.'],
   ['When should I use Issue Still Persists?', 'The original reporter uses it after testing a proposed resolution when the problem remains. Feedback returns the incident to In Progress for further investigation.'],
   ['Who can close an incident?', 'Only the original reporter can close the incident, after validating the resolution. Admin or Reviewer cannot close on behalf of someone else.'],
