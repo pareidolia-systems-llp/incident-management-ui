@@ -1,18 +1,39 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import useAuth from '../auth/useAuth'
 import { getErrorMessage } from '../utils/incident'
+import { employeeAssignmentEnabled, getAssignmentTriage } from '../api/assignment'
+import { getSecurityCapabilities, getTriage, incidentSecurityEnabled } from '../api/incidentSecurity'
 
 const navigation = [
   { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
   { to: '/incidents', label: 'Incidents', icon: 'incidents' },
   { to: '/incidents/new', label: 'Create Incident', icon: 'create' },
   { to: '/work-logs', label: 'My Work Log', icon: 'incidents', operational: true },
+  { to: '/employees', label: 'Employee Management', icon: 'incidents', administrationEnabled: () => import.meta.env.VITE_EMPLOYEE_MANAGEMENT_ENABLED === 'true' },
+  { to: '/department-administration', label: 'Department administration', icon: 'incidents', administrationEnabled: () => import.meta.env.VITE_DEPARTMENT_ADMIN_ENABLED === 'true' },
+  { to: '/assignment-triage', label: 'Incident triage', icon: 'incidents', guarded: 'assignment' },
+  { to: '/incident-security', label: 'Incident security', icon: 'incidents', guarded: 'security' },
   { to: '/help', label: 'How to Use', icon: 'help' },
 ]
 
 function AppLayout() {
   const { user, logout } = useAuth()
+  const [guardedNavigation, setGuardedNavigation] = useState(null)
+  useEffect(() => {
+    if (!employeeAssignmentEnabled() && !incidentSecurityEnabled()) return
+    let cancelled = false
+    const assignment = employeeAssignmentEnabled() ? getAssignmentTriage().then(Array.isArray, () => false) : false
+    const security = incidentSecurityEnabled()
+      ? Promise.allSettled([getTriage(), getSecurityCapabilities()]).then(results => results.some(result =>
+          result.status === 'fulfilled' && Array.isArray(result.value)
+          || result.status === 'rejected' && result.reason?.response?.status === 403))
+      : false
+    Promise.all([assignment, security]).then(([assignment, security]) => {
+      if (!cancelled) setGuardedNavigation({ user, assignment, security })
+    })
+    return () => { cancelled = true }
+  }, [user])
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -43,7 +64,9 @@ function AppLayout() {
       <aside className="sidebar p-3 p-md-4"><button type="button" className="sidebar-toggle" title={collapsed ? "Expand sidebar" : "Collapse sidebar"} onClick={toggleSidebar} aria-expanded={!collapsed} aria-controls="sidebar-navigation" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={collapsed ? "m9 5 7 7-7 7" : "m15 5-7 7 7 7"} /></svg></button>
         <div className="sidebar-brand d-flex align-items-start gap-3 mb-4 text-white"><span className="brand-mark" title="Pareidolia Systems LLP">PS</span><div className="brand-copy"><div className="brand-company">Pareidolia Systems LLP</div><div className="brand-application">Incident Management</div><div className="brand-subtitle">IT Service Operations</div></div></div>
         <nav id="sidebar-navigation" className="nav flex-column gap-1" aria-label="Primary navigation">
-          {navigation.filter((item) => (item.to !== '/incidents/new' || canCreateIncidents) && (!item.operational || ['IT_HANDLER', 'ADMIN'].includes(user.role))).map((item) => <NavLink key={item.to} to={item.to} end={item.end || (item.to === '/incidents' && pathname === '/incidents/new')} className="nav-link" title={item.label} aria-label={item.label}><NavigationIcon name={item.icon} /><span className="nav-full-label">{item.label}</span></NavLink>)}
+          {navigation.filter((item) => (item.to !== '/incidents/new' || canCreateIncidents) && (!item.operational || ['IT_HANDLER', 'ADMIN'].includes(user.role))
+            && (!item.guarded || (guardedNavigation?.user === user && guardedNavigation?.[item.guarded]))
+            && (!item.administrationEnabled || (user.canManageEmployees === true && item.administrationEnabled()))).map((item) => <NavLink key={item.to} to={item.to} end={item.end || (item.to === '/incidents' && pathname === '/incidents/new')} className="nav-link" title={item.label} aria-label={item.label}><NavigationIcon name={item.icon} /><span className="nav-full-label">{item.label}</span></NavLink>)}
         </nav>
       </aside>
       <div className="content-area flex-grow-1 d-flex flex-column">

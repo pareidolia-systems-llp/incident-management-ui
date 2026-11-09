@@ -10,6 +10,12 @@ import Help from './pages/Help'
 import MyWorkLog from './pages/MyWorkLog'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
+import EmployeeManagement from './pages/EmployeeManagement'
+import DepartmentAdministration from './pages/DepartmentAdministration'
+import AssignmentTriage from './pages/AssignmentTriage'
+import IncidentSecurityAdministration from './pages/IncidentSecurityAdministration'
+import { employeeAssignmentEnabled } from './api/assignment'
+import { incidentSecurityEnabled } from './api/incidentSecurity'
 
 function App({ RoutesComponent = Routes }) {
   return (
@@ -26,7 +32,11 @@ function AuthenticatedApplication({ RoutesComponent }) {
   if (error) return <AuthFailure onRetry={refreshUser} />
   if (!isAuthenticated) return location.pathname === '/login' ? <Login /> : <Navigate to={'/login' + location.search} replace />
   if (location.pathname === '/login') return <Navigate to={'/'} replace />
-  return <RoutesComponent><Route element={<AppLayout />}><Route path="/" element={<Dashboard />} /><Route path="/incidents" element={<IncidentList />} /><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/:id" element={<IncidentDetails />} /><Route path="/work-logs" element={<MyWorkLog />} /><Route path="/help" element={<Help />} /><Route path="*" element={<NotFound />} /></Route></RoutesComponent>
+  return <RoutesComponent><Route element={<AppLayout />}><Route path="/" element={<Dashboard />} /><Route path="/incidents" element={<IncidentList />} /><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/:id" element={<IncidentDetails />} /><Route path="/work-logs" element={<MyWorkLog />} />{import.meta.env.VITE_EMPLOYEE_MANAGEMENT_ENABLED === 'true' && <Route path="/employees" element={<EmployeeManagement />} />}
+    {import.meta.env.VITE_DEPARTMENT_ADMIN_ENABLED === 'true' && <Route path="/department-administration" element={<DepartmentAdministration />} />}
+    {employeeAssignmentEnabled() && <Route path="/assignment-triage" element={<AssignmentTriage />} />}
+    {incidentSecurityEnabled() && <Route path="/incident-security" element={<IncidentSecurityAdministration />} />}
+    <Route path="/help" element={<Help />} /><Route path="*" element={<NotFound />} /></Route></RoutesComponent>
 }
 
 function AuthLoading() { return <main className="login-page d-flex align-items-center justify-content-center p-4"><div className="text-center text-secondary"><div className="spinner-border text-primary mb-3" role="status" /><div>Checking your sign-in status…</div></div></main> }

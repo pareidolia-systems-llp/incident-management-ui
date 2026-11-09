@@ -16,6 +16,8 @@ import FieldGuidance from '../components/FieldGuidance'
 import { actionGuidance, guidanceDescription, workActionDescriptions } from '../utils/incidentGuidance'
 import { formatDate, getErrorMessage, labelize } from '../utils/incident'
 import { getLifecycleActions } from '../utils/incidentActions'
+import IncidentAssignment from '../components/IncidentAssignment'
+import { employeeAssignmentEnabled } from '../api/assignment'
 import { resolutionFeedbackFields, validateAction, createPayload } from '../utils/incidentActionForm'
 
 const sections = [
@@ -208,7 +210,7 @@ function IncidentDetailsPage() {
   const reviewCompleted = incident.status === 'CLOSED' && hasRecordedValue(incident.reviewedAt)
   const canPerformOperationalActions = ['IT_HANDLER', 'ADMIN'].includes(user.role)
   const canPerformReviewActions = ['REVIEWER', 'ADMIN'].includes(user.role)
-  const availableActions = [...getLifecycleActions(incident, user), ...(canPerformOperationalActions && incident.status !== 'CLOSED' ? ['workNote'] : [])]
+  const availableActions = [...getLifecycleActions(incident, user).filter(action => action !== 'assign' || !employeeAssignmentEnabled()), ...(canPerformOperationalActions && incident.status !== 'CLOSED' ? ['workNote'] : [])]
   const availableOperationalActions = incident.status === 'CLOSED' || !canPerformOperationalActions ? [] : operationalActionKeys
   return (
     <>
@@ -223,6 +225,7 @@ function IncidentDetailsPage() {
       {location.state?.uploadWarning && <div className="alert alert-warning" role="alert">{location.state.uploadWarning}</div>}
       {evidenceUploadWarning && <div className="alert alert-warning" role="alert">{evidenceUploadWarning}</div>}
       <IncidentStatusTracker incident={incident} />
+      {employeeAssignmentEnabled() && <IncidentAssignment key={id} incidentId={id} onAssigned={() => refresh(true, false)} />}
       <ActionsPanel operational={canPerformOperationalActions} waitingMessage={user.role === 'REPORTER' ? reporterWaitingMessage(incident) : null} actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} disabled={workspaceSaving || savingAction} inlineWorkspace={availableActions.includes('investigation') ? <InlineWorkspace values={investigationValues} files={investigationFiles} onFilesChange={setInvestigationFiles} onChange={editInvestigation} saving={workspaceSaving || savingAction} dirty={investigationDirty} error={workspaceError} errors={workspaceErrors} notice={workspaceNotice} resolutionOpen={resolutionOpen} resolutionValues={resolutionValues} onResolutionChange={event => { setResolutionValues(current => ({ ...current, [event.target.name]: event.target.value })); setWorkspaceError(''); setWorkspaceErrors({}) }} onCancelResolution={() => setResolutionOpen(false)} onSave={() => runWorkspace('save')} onResolve={() => runWorkspace('resolve')} onConfirm={() => runWorkspace('confirm')} /> : null} />
       <AuditTrail history={history} state={historyState} error={historyError} onRetry={loadIncident} />
       <div className="row g-3 mb-4">{sections.map((section) => <DetailSection key={section.title} section={section} incident={incident} />)}</div>

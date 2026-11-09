@@ -27,7 +27,7 @@ beforeEach(() => {
   apiClient.post.mockImplementation(async () => { currentUser = null; return { status: 204 } })
 })
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.unstubAllEnvs() })
 
 test('login and a refreshed login stay visible without starting OAuth', async () => {
   const first = render(<App />)
@@ -94,4 +94,52 @@ test('failed server logout does not claim the session has ended', async () => {
   expect(window.location.pathname).toBe('/incidents')
   expect(screen.queryByRole('button', { name: 'Sign in with Google' })).toBeNull()
   expect(getCsrfToken()).not.toBeNull()
+})
+
+test.each(['/employees', '/department-administration'])('blocks a direct admin URL for an ADMIN without the server capability: %s', async path => {
+  vi.stubEnv('VITE_EMPLOYEE_MANAGEMENT_ENABLED', 'true')
+  vi.stubEnv('VITE_DEPARTMENT_ADMIN_ENABLED', 'true')
+  currentUser = { ...user, role: 'ADMIN', canManageEmployees: false }
+  window.history.replaceState({}, '', path)
+  render(<App />)
+  expect((await screen.findByRole('alert')).textContent).toBe('Access denied.')
+  expect(screen.queryByRole('link', { name: 'Employee Management' })).toBeNull()
+  expect(screen.queryByRole('link', { name: 'Department administration' })).toBeNull()
+  expect(apiClient.get.mock.calls.some(([url]) => url.startsWith('/api/admin/'))).toBe(false)
+})
+
+test('department sections honor independent server permission checks', async () => {
+  vi.stubEnv('VITE_DEPARTMENT_ADMIN_ENABLED', 'true')
+  currentUser = { ...user, canManageEmployees: true }
+  const authGet = apiClient.get.getMockImplementation()
+  apiClient.get.mockImplementation(async url => {
+    if (url === '/api/admin/handler-eligibility') return { data: [] }
+    if (url.startsWith('/api/admin/department-head-designations')) throw { response: { status: 403 } }
+    return authGet(url)
+  })
+  window.history.replaceState({}, '', '/department-administration')
+  render(<App />)
+  expect(await screen.findByText('Department head information is unavailable.')).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Review change' })).toBeNull()
+  expect(await screen.findByRole('button', { name: 'Save eligibility' })).toBeTruthy()
+  expect(screen.getByRole('link', { name: 'Department administration' })).toBeTruthy()
+  expect(screen.queryByRole('link', { name: 'Incident triage' })).toBeNull()
+  expect(screen.queryByRole('link', { name: 'Incident security' })).toBeNull()
+})
+
+test.each(['/assignment-triage', '/incident-security'])('ADMIN and frontend flags cannot expose guarded controls when the backend is off (%s)', async path => {
+  currentUser = { ...user, role: 'ADMIN' }
+  vi.stubEnv('VITE_INCIDENT_ASSIGNMENT_ENABLED', 'true')
+  vi.stubEnv('VITE_INCIDENT_SECURITY_ADMIN_ENABLED', 'true')
+  const authentication = apiClient.get.getMockImplementation()
+  apiClient.get.mockImplementation(url => url.startsWith('/api/auth/')
+    ? authentication(url)
+    : Promise.reject({ response: { status: 404 } }))
+  window.history.replaceState({}, '', path)
+  render(<App />)
+  expect(await screen.findByRole('alert')).toBeTruthy()
+  expect(screen.queryByRole('link', { name: 'Incident triage' })).toBeNull()
+  expect(screen.queryByRole('link', { name: 'Incident security' })).toBeNull()
+  expect(screen.queryByRole('button', { name: /save|load (case|triage)/i })).toBeNull()
+  expect(apiClient.post).not.toHaveBeenCalled()
 })
