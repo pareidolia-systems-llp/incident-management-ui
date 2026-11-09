@@ -3,7 +3,7 @@ export const helpSections = [
   ['sign-in', 'Sign In and Sign Out'], ['quick-start', 'Creating an Incident'], ['purpose', 'What This Portal Is For'],
   ['lifecycle', 'Resolution and Validation'], ['roles', 'Roles and Permissions'],
   ['incident-types', 'Understanding Incident Types'], ['field-guide', 'Complete Field Guide'],
-  ['screenshots', 'Attachments'], ['after-submission', 'What Happens After Submission'], ['assignment', 'Assignment and Ownership'], ['notifications', 'Notifications'], ['availability', 'Development Features'],
+  ['screenshots', 'Attachments'], ['after-submission', 'What Happens After Submission'], ['assignment', 'Assignment and Ownership'], ['notifications', 'Notifications'], ['availability', 'HR and Administration'],
   ['work-logs', 'Investigation and Work Logs'], ['issue-still-persists', 'Issue Still Persists'], ['my-work-log', 'My Work Log'], ['audit-trail', 'Understanding the Audit Trail'], ['monthly-reports', 'Monthly Incident Reports'],
   ['scenarios', 'Common Scenarios'], ['faq', 'Frequently Asked Questions'],
 ]
@@ -17,15 +17,15 @@ export const helpFieldLinks = {
 
 export const roleGuides = [
   { role: 'REPORTER', label: 'Reporter', id: 'role-reporter', text: 'Create incidents and view your own incidents. Add or download supporting images on incidents you can access. As the original reporter, validate a resolved incident, report that the issue still persists, and close it after validation. Operational changes, post-closure review, and monthly downloads are not available to this role.', links: [['quick-start', 'Start a report'], ['screenshots', 'Add evidence']] },
-  { role: 'IT_HANDLER', label: 'IT Handler', id: 'role-it-handler', text: 'View incidents, assign owners, investigate, update evidence, reclassify, change severity or priority, escalate, and resolve as the current status permits. Add/download images and download monthly reports. This role cannot create incidents or perform post-closure review. Validation and closure are available only if you are the original reporter.', links: [['investigation-details', 'Record investigation'], ['monthly-reports', 'Export a report']] },
+  { role: 'IT_HANDLER', label: 'IT Handler', id: 'role-it-handler', text: 'View authorized incidents, assign owners when permitted, investigate, update evidence, reclassify, change severity or priority, escalate, and resolve as the current status permits. Add/download images and download monthly reports. This role cannot create incidents or perform post-closure review. Validation and closure are available only if you are the original reporter.', links: [['investigation-details', 'Record investigation'], ['monthly-reports', 'Export a report']] },
   { role: 'REVIEWER', label: 'Reviewer', id: 'role-reviewer', text: 'View incidents and download their images. Review a Closed incident once, recording review details, lessons learned, and preventive action. This role cannot create incidents, perform operational updates, upload images, or download monthly reports. Being a reviewer does not grant validation or closure of another person’s incident.', links: [['lifecycle', 'Understand the stages'], ['review-details', 'Record a review']] },
-  { role: 'ADMIN', label: 'Admin', id: 'role-admin', text: 'Create and view incidents, perform operational actions, add/download images, export monthly reports, and perform post-closure review. Status and one-review rules still apply. Even an admin can validate or close an incident only when they are its original reporter.', links: [['lifecycle', 'Check workflow rules'], ['monthly-reports', 'Export a report']] },
+  { role: 'ADMIN', label: 'Admin', id: 'role-admin', text: 'Create and view incidents within approved access, perform authorized operational actions, add/download images, export monthly reports, and perform post-closure review. Status and one-review rules still apply. Even an admin can validate or close an incident only when they are its original reporter.', links: [['lifecycle', 'Check workflow rules'], ['monthly-reports', 'Export a report']] },
 ]
 
 export const lifecycleStages = [
-  ['Create Incident', 'The signed-in reporter submits the details. A ticket number is generated and the incident immediately starts as Assigned.'],
-  ['Assignment', 'The configured default IT owner is assigned automatically. Assign Incident is offered to IT Handler or Admin for Open incidents.'],
-  ['Open', 'An existing Open incident is waiting for assignment. New reports normally start as Assigned under the current automatic-assignment workflow.'],
+  ['Create Incident', 'The signed-in reporter submits the details. A ticket number is generated. The incident can start as Open or Assigned.'],
+  ['Assignment', 'Assigned means an owner has been set. Use Assign Incident only if the incident screen offers it and you are authorized.'],
+  ['Open', 'An Open incident is waiting for assignment or review.'],
   ['Investigation', 'IT Handler or Admin records findings and actions. Updating investigation from Assigned moves the incident to In Progress.'],
   ['Resolution', 'IT Handler or Admin records the fix and marks the incident Resolved. Resolution can follow Assigned directly or follow In Progress.'],
   ['Validation', 'Only the original reporter can validate a Resolved incident. They test the fix and record Validation Details; the status becomes Validated.'],

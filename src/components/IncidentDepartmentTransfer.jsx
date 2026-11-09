@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { employeeAssignmentEnabled, getTransferOptions, searchTransferHandlers, transferIncident } from '../api/assignment'
+import { employeeAssignmentEnabled, getTransferOptions, searchTransferHandlers, transferIncident, getTransferHandoffs, requestTransferHandoff, decideTransferHandoff, getTransferHandoffHistory } from '../api/assignment'
 
 const validId = id => Number.isSafeInteger(id) && id > 0
 const validVersion = version => Number.isSafeInteger(version) && version >= 0
@@ -21,6 +21,18 @@ function TransferDiscovery({ incidentId, onRefresh }) {
   const [options, setOptions] = useState(null)
   const [revision, setRevision] = useState(0)
   const [feedback, setFeedback] = useState(null)
+  const [handoffs, setHandoffs] = useState(null)
+  const [handoffRevision, setHandoffRevision] = useState(0)
+  useEffect(() => {
+    let current = true
+    getTransferHandoffs(incidentId).then(data => { if (current) setHandoffs(data) })
+      .catch(() => { if (current) setHandoffs(null) })
+    return () => { current = false }
+  }, [incidentId, handoffRevision])
+  function reloadHandoffs() {
+    setHandoffs(null)
+    setHandoffRevision(value => value + 1)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -45,22 +57,23 @@ function TransferDiscovery({ incidentId, onRefresh }) {
     setFeedback({ message, success })
     setOptions(null)
     setRevision(value => value + 1)
-    if (refresh) onRefresh?.()
+    if (refresh) { reloadHandoffs(); onRefresh?.() }
   }
 
-  if (!options && !feedback) return null
+  if (!options && !feedback && !handoffs?.length) return null
   return <section className="card section-card mb-3" aria-label="Transfer Department">
     <div className="card-body">
       {feedback && <p role={feedback.success ? 'status' : 'alert'}>{feedback.message}</p>}
       {options && <>
         <h2 className="h5">Transfer Department</h2>
-        <TransferForm options={options} reload={reload} />
+        <TransferForm options={options} reload={reload} handoffs={handoffs} onHandoffChanged={reloadHandoffs} />
       </>}
+      {handoffs?.length > 0 && <HandoffReview key={handoffRevision} incidentId={incidentId} handoffs={handoffs} refresh={reloadHandoffs} />}
     </div>
   </section>
 }
 
-function TransferForm({ options, reload }) {
+function TransferForm({ options, reload, handoffs, onHandoffChanged }) {
   const { state, destinations } = options
   const [destinationId, setDestinationId] = useState('')
   const [query, setQuery] = useState('')
@@ -79,7 +92,31 @@ function TransferForm({ options, reload }) {
 
   const destination = destinations.find(item => String(item.departmentId) === destinationId)
   const handler = matches.find(item => String(item.id) === handlerId)
-  const canReview = Boolean(destination && handler && reason.trim() && reason.length <= 500 && approvalPattern.test(reference.trim()))
+  const matching = (handoffs ?? []).filter(item => item.sourceDepartmentId === state.sourceDepartmentId
+    && item.destinationDepartmentId === destination?.departmentId && item.handlerId === handler?.id
+    && item.assignmentVersion === state.assignmentVersion && item.classificationVersion === state.classificationVersion)
+  const approved = matching.filter(item => item.canUse === true && item.status === 'APPROVED' && approvalPattern.test(item.reference))
+  const hasSelection = Boolean(destination && handler && reason.trim() && reason.length <= 500)
+  const canReview = hasSelection && approved.some(item => item.reference === reference)
+  const [requestNotice, setRequestNotice] = useState('')
+  async function requestApproval() {
+    if (!hasSelection || !handoffs || pending.current) return
+    pending.current = true
+    setSaving(true); setRequestNotice('')
+    try {
+      await requestTransferHandoff(state.incidentId, {
+        expectedSourceDepartmentId: state.sourceDepartmentId,
+        destinationDepartmentId: destination.departmentId,
+        destinationHandlerUserId: handler.id,
+        expectedVersion: state.assignmentVersion,
+        expectedClassificationVersion: state.classificationVersion,
+        reason: reason.trim(),
+      })
+      onHandoffChanged()
+      setRequestNotice('Handoff approval requested.')
+    } catch { setRequestNotice('Unable to request handoff. Check the current incident and try again.') }
+    finally { pending.current = false; setSaving(false) }
+  }
 
   function clearSearch() {
     sequence.current += 1
@@ -191,9 +228,67 @@ function TransferForm({ options, reload }) {
       <textarea className="form-control" maxLength={500} required value={reason} onChange={event => setReason(event.target.value)} />
     </label>
     <label className="form-label d-block">Handoff approval reference
-      <input className="form-control" maxLength={100} required value={reference} onChange={event => setReference(event.target.value)} />
+      <select className="form-select" value={reference} onChange={event => setReference(event.target.value)}>
+        <option value="">Choose an approved handoff</option>
+        {approved.map(item => <option key={item.reference} value={item.reference}>{item.reference}</option>)}
+      </select>
     </label>
-    <p className="small text-secondary">Enter the reference supplied by the independent access review. The reference is recorded with the transfer.</p>
+    <p className="small text-secondary">Only approved handoffs for this route, handler and current incident version can be used.</p>
+    {handoffs && !matching.some(item => item.status === 'PENDING' || item.status === 'APPROVED') &&
+      <button type="button" className="btn btn-outline-primary me-2" disabled={!hasSelection || saving} onClick={requestApproval}>Request handoff approval</button>}
+    {requestNotice && <p role="status">{requestNotice}</p>}
     <button className="btn btn-primary" disabled={!canReview}>Review transfer</button>
   </form>
+}
+
+function HandoffReview({ incidentId, handoffs, refresh }) {
+  const [reference, setReference] = useState('')
+  const [reason, setReason] = useState('')
+  const [history, setHistory] = useState(null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const pending = useRef(false)
+  const selected = handoffs.find(item => item.reference === reference)
+  useEffect(() => {
+    if (!reference) return
+    let current = true
+    getTransferHandoffHistory(incidentId, reference).then(data => { if (current) setHistory(data) })
+      .catch(() => { if (current) setError('Handoff history is unavailable.') })
+    return () => { current = false }
+  }, [incidentId, reference])
+  async function decide(action) {
+    if (!selected || !reason.trim() || pending.current) return
+    pending.current = true
+    setBusy(true); setError('')
+    try {
+      await decideTransferHandoff(incidentId, selected.reference, { action, expectedVersion: selected.version, reason: reason.trim() })
+      refresh()
+    } catch (failure) {
+      if (failure.response?.status === 409) refresh()
+      else setError('The handoff decision could not be saved.')
+    } finally { pending.current = false; setBusy(false) }
+  }
+  return <section className="mt-3" aria-label="Transfer handoffs">
+    <h3 className="h6">Transfer handoffs</h3>
+    <label className="form-label">Handoff record
+      <select className="form-select" disabled={busy} value={reference} onChange={event => {
+        setReference(event.target.value); setHistory(null); setReason(''); setError('')
+      }}>
+        <option value="">Choose a handoff record</option>
+        {handoffs.map(item => <option key={item.reference} value={item.reference}>{item.status} · Department {item.sourceDepartmentId} to {item.destinationDepartmentId} · {item.reference}</option>)}
+      </select>
+    </label>
+    {error && <p role="alert">{error}</p>}
+    {selected && <><p>Coordinator #{selected.coordinatorId} · Destination handler #{selected.handlerId}</p>
+      <p>Request reason: {selected.requestReason}</p>
+      {history && <ul aria-label="Handoff audit history">{history.map(entry => <li key={entry.version}>{entry.changedAt} · Account {entry.actorId} · {entry.status} · {entry.reason}</li>)}</ul>}
+      {(selected.canReview || selected.canRevoke) && <><label className="form-label d-block">Handoff decision reason
+        <textarea className="form-control" maxLength={500} value={reason} disabled={busy} onChange={event => setReason(event.target.value)} />
+      </label>
+      {selected.canReview && <><button type="button" className="btn btn-primary me-2" disabled={busy || !reason.trim()} onClick={() => decide('APPROVED')}>Approve handoff</button>
+        <button type="button" className="btn btn-outline-danger me-2" disabled={busy || !reason.trim()} onClick={() => decide('REJECTED')}>Reject handoff</button></>}
+      {selected.canRevoke && <button type="button" className="btn btn-outline-danger" disabled={busy || !reason.trim()} onClick={() => decide('REVOKED')}>Revoke handoff</button>}
+      </>}
+    </>}
+  </section>
 }

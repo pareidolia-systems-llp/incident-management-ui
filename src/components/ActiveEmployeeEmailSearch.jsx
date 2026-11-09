@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from 'react'
 import { searchActiveEmployeeEmails } from '../api/employees'
 
-export default function ActiveEmployeeEmailSearch({ onSelect }) {
+export default function ActiveEmployeeEmailSearch({ onSelect, lookup = searchActiveEmployeeEmails }) {
   const inputId = useId()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
@@ -15,7 +15,7 @@ export default function ActiveEmployeeEmailSearch({ onSelect }) {
     const current = ++sequence.current
     setBusy(true); setResults([]); setError(''); setSearched(false); onSelect(null)
     try {
-      const matches = await searchActiveEmployeeEmails(query.trim())
+      const matches = await lookup(query.trim())
       if (sequence.current === current) { setResults(matches); setSearched(true) }
     } catch {
       if (sequence.current === current) setError('Unable to search employees. Please try again.')

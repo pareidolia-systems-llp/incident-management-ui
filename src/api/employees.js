@@ -68,3 +68,18 @@ export async function getHandlerEligibilityHistory(userId) {
   if (!Array.isArray(data)) throw new Error('Invalid eligibility history')
   return data
 }
+
+const membershipBase = '/api/admin/department-memberships'
+export const departmentMembershipEnabled = () => import.meta.env.VITE_DEPARTMENT_MEMBERSHIP_ADMIN_ENABLED === 'true'
+
+async function membershipList(path, config) {
+  const { data } = await apiClient.get(membershipBase + path, config)
+  if (!Array.isArray(data)) throw new Error('Invalid membership response')
+  return data
+}
+
+export const getMembershipDepartments = () => membershipList('/departments')
+export const getDepartmentMemberships = departmentId => membershipList('/' + departmentId)
+export const getMembershipHistory = (departmentId, userId) => membershipList('/' + departmentId + '/' + userId + '/history')
+export const searchMembershipEmployees = search => membershipList('/employees', { params: { search } })
+export const updateMembership = (departmentId, userId, change) => apiClient.put(membershipBase + '/' + departmentId + '/' + userId, change)
