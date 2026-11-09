@@ -48,6 +48,7 @@ export default function AssignmentTriage() {
 function TriageCase({ id, onChanged }) {
   const [detail, setDetail] = useState(null)
   const [error, setError] = useState('')
+  const [detailRevision, setDetailRevision] = useState(0)
   useEffect(() => {
     let cancelled = false
     getTriageDetail(id).then(data => {
@@ -57,7 +58,7 @@ function TriageCase({ id, onChanged }) {
       if (!cancelled) setError('This incident is unavailable for triage.')
     })
     return () => { cancelled = true }
-  }, [id])
+  }, [id, detailRevision])
 
   if (error) return <p role="alert">{error}</p>
   if (!detail) return <p role="status">Loading incident…</p>
@@ -66,6 +67,9 @@ function TriageCase({ id, onChanged }) {
     <p className="text-break">{detail.incident.description}</p>
     {detail.assignment.classification === 'UNCLASSIFIED'
       ? <p>Unclassified. An authorized classifier must set a trusted classification in Incident security before assignment.</p>
-      : <IncidentAssignment incidentId={id} onAssigned={onChanged} />}
+      : <IncidentAssignment incidentId={id} onAssigned={onChanged} onTransferred={() => {
+          setDetailRevision(value => value + 1)
+          onChanged()
+        }} />}
   </section>
 }

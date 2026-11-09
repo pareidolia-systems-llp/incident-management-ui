@@ -8,3 +8,15 @@ export async function getAssignmentHistory(id) { return (await apiClient.get(`${
 export async function saveAssignment(id, payload) { return (await apiClient.post(`${base}/${id}`, payload)).data }
 export async function getAssignmentTriage() { return (await apiClient.get(`${base}/triage`)).data }
 export async function getTriageDetail(id) { return (await apiClient.get(`${base}/triage/${id}`)).data }
+
+export async function getTransferOptions(id) {
+  return (await apiClient.get(`${base}/${id}/transfer/options`)).data
+}
+
+export async function searchTransferHandlers(id, destinationDepartmentId, search) {
+  return (await apiClient.get(`${base}/${id}/transfer/handlers`, { params: { destinationDepartmentId, search } })).data
+}
+
+export async function transferIncident(id, payload) {
+  return (await apiClient.post(`${base}/${id}/transfer`, payload)).data
+}
