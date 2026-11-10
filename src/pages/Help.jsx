@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import useAuth from '../auth/useAuth'
 import PageTitle from '../components/PageTitle'
 import { fieldGuidance } from '../utils/incidentGuidance'
@@ -7,7 +7,7 @@ import { issueTypes, issueTypeGuide, reporterDepartments, categoriesByIssueType,
 import { helpSections, roleGuides, lifecycleStages, fieldGroups, scenarios, faqs } from '../utils/portalHelp'
 import { labelize } from '../utils/incident'
 import { employeeAssignmentEnabled } from '../api/assignment'
-import { departmentMembershipEnabled } from '../api/employees'
+import { DepartmentAdministrationGuide, EmployeeAdministrationGuide } from '../components/AdministrationGuides'
 
 const topicLabels = { 'sign-in': 'Sign In / Sign Out', assignment: 'Assignment', notifications: 'Notifications', availability: 'Feature Availability', purpose: 'Portal Purpose', 'incident-types': 'Incident Types', 'field-guide': 'Field Guide', screenshots: 'Screenshots & Evidence', 'after-submission': 'After Submission', 'audit-trail': 'Audit Trail', 'monthly-reports': 'Monthly Reports', scenarios: 'Common Scenarios', faq: 'FAQ' }
 
@@ -21,6 +21,7 @@ function Section({ id, children }) {
 
 export default function Help() {
   const { user } = useAuth()
+  const referralNavigation = useOutletContext()
   const navigate = useNavigate()
   const { hash, key } = useLocation()
   useEffect(() => {
@@ -95,16 +96,19 @@ export default function Help() {
       <Link className="btn btn-primary" to={canCreate ? '/incidents/new' : '/incidents'}>{canCreate ? 'Create Incident' : 'View Incidents'}</Link>
     </Section>
     <Section id="assignment">
-      <p>Ordinary reports without a Responsible Department may be automatically assigned to the configured IT owner. A report that needs restricted handling can stay Open without an owner.</p>
+      {!guardedAssignment && <p>Ordinary reports without a Responsible Department may be automatically assigned to the configured IT owner. A report that needs restricted handling can stay Open without an owner.</p>}
       <p>Use Assign Incident only when the incident screen offers it and you are authorized to set the owner. Check the saved owner and Activity after submitting.</p>
       {guardedAssignment
-        ? <p>Where authorized assignment is offered, Assign selects an eligible handler and Reassign changes that handler within the same department. Choose from the returned list and give a reason. If the incident changed, reload before trying again.</p>
+        ? <p>Choose a handler from the portal’s eligible list and give a reason. Ordinary IT issues and service requests can go to authorized IT handlers even if they belong to a different department. Restricted cases follow separate access rules. If the incident changed, reload before trying again.</p>
         : <p>Employee-based assignment, reassignment and department transfer are unavailable in this portal configuration.</p>}
-      {guardedAssignment && <p>Transfer Department is available only when the server returns an authorized route. It moves the incident to another department with an eligible handler and a verified handoff approval. If former-handler access still needs review, the transfer is blocked. Existing access is not silently removed.</p>}
+      {guardedAssignment && referralNavigation?.assignment && <p>Transfer Department is available only when the server returns an authorized route. It moves the incident to another department with an eligible handler and a verified handoff approval. If former-handler access still needs review, the transfer is blocked. Existing access is not silently removed.</p>}
       <p>Confidential cases can be absent from your list even if you are an IT handler or administrator. Ask your approved support contact about access without sharing confidential details.</p>
     </Section>
     <Section id="notifications">
-      <p>Check Incident Details and Activity &amp; Work Log for changes and save confirmations. There is no separate in-app notification inbox.</p>
+      <p>Check Incident Details and Activity &amp; Work Log for changes and save confirmations.</p>
+      {referralNavigation?.referralReview
+        ? <p>Authorized HR reviewers can check <Link to="/hr-referrals">HR pending referrals</Link> for work awaiting a decision.</p>
+        : <p>There is no separate in-app notification inbox for your account.</p>}
       <p>If email is enabled, approved recipients may receive a notice. The message may contain a portal link. Email does not grant incident access. Confidential details require separate authorization, and some incidents send no email at all.</p>
       <p>Do not expect email after every update. Check the portal before submitting the same incident again.</p>
     </Section>
@@ -113,11 +117,12 @@ export default function Help() {
       <p>IT administrators do not automatically receive access to confidential HR cases. Authorized HR staff see cases within their approved access. A job title, department membership, department-head designation, or email notice does not grant incident access.</p>
       {hrIntake ? <p>Use HR Issue for a routine request if it appears in Create Incident.</p> : <p>HR Issue is unavailable in this portal configuration.</p>}
       {(employeeAdmin || departmentAdmin) && <><h3>Authorized administration</h3>
-        {employeeAdmin && <p>In Employee Management, use the available controls to add or edit employee records, change account status, and review recorded changes. Give the requested reason for each change.</p>}
-        {departmentAdmin && <p>In Department Administration, use the panels available to your account. Department heads and handler eligibility are managed separately. Review each change and use its history to see who changed it and why.</p>}
-        {departmentAdmin && departmentMembershipEnabled() && <p>If the Department memberships panel appears, choose a department and an active employee. Review the grant or revocation, enter a reason, and confirm. Select a membership record to see its history.</p>}
+        {employeeAdmin && <><h4><Link to="/employees">Employee Management</Link></h4><EmployeeAdministrationGuide /></>}
+        {departmentAdmin && <><h4><Link to="/department-administration">Department Administration</Link></h4><DepartmentAdministrationGuide /></>}
       </>}
-      {guardedAssignment ? <p>If Request handoff approval is offered, select the destination and handler and give a reason. An independent reviewer uses the handoff panel to approve or reject a pending request, or revoke an approval. A revoked approval cannot be used for a future transfer. Only the approved records offered by the portal can be selected for transfer.</p>
+      {referralNavigation?.referralIntake && <p>Designated IT coordinators can <Link to="/reassignment-referral">submit a reassignment referral</Link> using only the exact reference shared through the approved channel. An acceptance message only confirms the portal accepted the submission for processing.</p>}
+      {referralNavigation?.referralReview && <p>Authorized HR coordinators can open a pending referral, check the case, and record a decision. Review the former handler’s case access before reassigning and obtain separate handoff approval before transferring.</p>}
+      {guardedAssignment && referralNavigation?.assignment ? <p>If Request handoff approval is offered, select the destination and handler and give a reason. An independent reviewer uses the handoff panel to approve or reject a pending request, or revoke an approval. A revoked approval cannot be used for a future transfer. Only the approved records offered by the portal can be selected for transfer.</p>
         : <p>Transfer handoff requests and decisions are unavailable in this portal configuration.</p>}
     </Section>
     <Section id="purpose"><p>This portal records internal IT faults, service requests, suspected or confirmed information-security incidents, and major security incidents. It keeps the reported impact, investigation, evidence, resolution, and review together so authorized colleagues can follow the work.</p></Section>

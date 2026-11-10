@@ -16,6 +16,8 @@ import AssignmentTriage from './pages/AssignmentTriage'
 import IncidentSecurityAdministration from './pages/IncidentSecurityAdministration'
 import { employeeAssignmentEnabled } from './api/assignment'
 import { incidentSecurityEnabled } from './api/incidentSecurity'
+import { hrReferralsEnabled } from './api/hrReferrals'
+import HrReferrals, { ReferralIntake } from './pages/HrReferrals'
 
 function App({ RoutesComponent = Routes }) {
   return (
@@ -36,6 +38,8 @@ function AuthenticatedApplication({ RoutesComponent }) {
     {import.meta.env.VITE_DEPARTMENT_ADMIN_ENABLED === 'true' && <Route path="/department-administration" element={<DepartmentAdministration />} />}
     {employeeAssignmentEnabled() && <Route path="/assignment-triage" element={<AssignmentTriage />} />}
     {incidentSecurityEnabled() && <Route path="/incident-security" element={<IncidentSecurityAdministration />} />}
+    {hrReferralsEnabled() && <Route path="/reassignment-referral" element={<ReferralIntake />} />}
+    {hrReferralsEnabled() && <Route path="/hr-referrals" element={<HrReferrals />} />}
     <Route path="/help" element={<Help />} /><Route path="*" element={<NotFound />} /></Route></RoutesComponent>
 }
 

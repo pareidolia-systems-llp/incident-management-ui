@@ -22,7 +22,7 @@ export default function HandlerPicker({ value, onChange, incidentId, disabled = 
     <label htmlFor={id} className="form-label">Search eligible handlers by official email or name</label>
     <div className="d-flex gap-2"><input id={id} className="form-control" maxLength={255} value={query} disabled={disabled} onChange={event => { sequence.current += 1; setQuery(event.target.value); setMatches([]); setError(''); setBusy(false); setSearched(false); onChange(null) }} /><button type="button" className="btn btn-outline-primary" disabled={disabled || busy || query.trim().length < 2} onClick={search}>{busy ? 'Searching…' : 'Search handlers'}</button></div>
     {error && <p role="alert">{error}</p>}
-    {searched && matches.length === 0 && !value && <p role="status">No eligible handlers match this search. Eligibility, active department membership, case grants, and assignment scope are checked by the server.</p>}
+    {searched && matches.length === 0 && !value && <p role="status">No eligible handlers match this search. The portal checks handler eligibility, department membership or IT service-team status, case access, and assignment scope.</p>}
     {matches.length > 0 && <ul aria-label="Eligible handlers">{matches.map(employee => <li key={employee.id}><button type="button" className="btn btn-link" disabled={disabled} onClick={() => { sequence.current += 1; onChange(employee); setMatches([]); setBusy(false) }}>{employee.name} — {employee.email}</button></li>)}</ul>}
     {value && <p className="mt-2">Selected: {value.name} — {value.email} <button type="button" className="btn btn-link" disabled={disabled} onClick={() => onChange(null)}>Clear handler</button></p>}
   </div>

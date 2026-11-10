@@ -50,8 +50,15 @@ test('removal sends the server version and history comes from the backend', asyn
 test('rejects denied directory reads without showing stale names', async () => {
   apiClient.get.mockRejectedValue({ response: { status: 403, data: { message: 'private' } } })
   render(<DepartmentHeadManagement />)
-  expect((await screen.findByRole('alert')).textContent).toContain('unavailable')
+  expect((await screen.findByRole('alert')).textContent).toContain('Ask the HR access administrator')
   expect(screen.queryByText(/private/)).toBeNull();expect(apiClient.put).not.toHaveBeenCalled()
+})
+
+test.each([500, undefined])('shows technical guidance for server and network failures (%s)', async status => {
+  apiClient.get.mockRejectedValue(status ? { response: { status } } : new Error('offline'))
+  render(<DepartmentHeadManagement />)
+  expect((await screen.findByRole('alert')).textContent).toContain('contact portal support')
+  expect(screen.queryByText(/HR access administrator/)).toBeNull()
 })
 test('version conflicts clear the selected account and require review again', async () => {
   designations=[existing];apiClient.put.mockRejectedValue({ response: { status: 409 } });render(<DepartmentHeadManagement />)

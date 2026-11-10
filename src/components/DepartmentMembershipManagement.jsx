@@ -2,17 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ActiveEmployeeEmailSearch from './ActiveEmployeeEmailSearch'
 import { getMembershipDepartments, getDepartmentMemberships, getMembershipHistory, searchMembershipEmployees, updateMembership } from '../api/employees'
+import { departmentAdministrationError } from '../utils/departmentAdministration'
 
 export default function DepartmentMembershipManagement() {
   const [departments, setDepartments] = useState(null)
   const [department, setDepartment] = useState('')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
   useEffect(() => {
     let current = true
-    getMembershipDepartments().then(data => { if (current) setDepartments(data) }).catch(() => {})
+    getMembershipDepartments().then(data => { if (current) setDepartments(data) })
+      .catch(failure => { if (current) setError(departmentAdministrationError(failure, 'Department membership information')) })
     return () => { current = false }
   }, [])
-  if (!departments) return null
+  if (!departments) return error ? <p role="alert">{error}</p> : null
   return <section className="card mb-3" aria-labelledby="membership-heading"><div className="card-body">
     <h2 className="h5" id="membership-heading">Department memberships</h2>
     <p>Membership does not grant incident access, handler eligibility, or department-head status. <Link to="/help#availability">Help with department administration</Link></p>
@@ -37,8 +40,8 @@ function MembershipEditor({ department, busy, setBusy }) {
   const sending = useRef(false)
   useEffect(() => {
     let current = true
-    getDepartmentMemberships(department).then(data => { if (current) setMembers(data) }).catch(() => {
-      if (current) setError('Membership records are unavailable.')
+    getDepartmentMemberships(department).then(data => { if (current) setMembers(data) }).catch(failure => {
+      if (current) setError(departmentAdministrationError(failure, 'Department membership information'))
     })
     return () => { current = false }
   }, [department, revision])
@@ -50,7 +53,11 @@ function MembershipEditor({ department, busy, setBusy }) {
     if (!target || !current) return
     let live = true
     getMembershipHistory(department, target.id).then(data => { if (live) setHistory(data) })
-      .catch(() => { if (live) setError('Membership history is unavailable.') })
+      .catch(failure => { if (live) {
+        setHistory(null)
+        if ([401, 403, 404].includes(failure.response?.status)) { setMembers(null); setTarget(null); setReview(null) }
+        setError(departmentAdministrationError(failure, 'Membership history'))
+      } })
     return () => { live = false }
   }, [department, target, current])
   async function save() {
@@ -65,9 +72,10 @@ function MembershipEditor({ department, busy, setBusy }) {
     } catch (failure) {
       const status = failure.response?.status
       if ([401, 403, 404, 409].includes(status)) {
-        select(null); setMembers(null); setRevision(value => value + 1)
+        select(null); setMembers(null)
+        if (status === 409) setRevision(value => value + 1)
       }
-      setError(status === 409 ? 'Membership changed. Review the latest information before retrying.' : 'Unable to save membership.')
+      setError(status === 409 ? 'Membership changed. Review the latest information before retrying.' : departmentAdministrationError(failure, 'Saving department membership'))
     } finally { sending.current = false; setBusy(false) }
   }
   return <>

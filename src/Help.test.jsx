@@ -211,7 +211,7 @@ test('approved employee administrators receive guidance only for enabled panels'
   render(<App />)
   await screen.findByRole('heading', { name: 'How to Use This Portal' })
   const guide = document.getElementById('availability').textContent
-  expect(guide).toContain('In Employee Management')
+  expect(guide).toContain('Authorized HR staff and IT administrators use Employee Management')
   expect(guide).toContain('If the Department memberships panel appears')
   expect(guide).toContain('Transfer handoff requests and decisions are unavailable')
 })

@@ -12,12 +12,13 @@ function sameState(expected, actual) {
     && actual.classificationVersion === expected.classificationVersion
 }
 
-export default function IncidentDepartmentTransfer({ incidentId, onRefresh }) {
+export default function IncidentDepartmentTransfer({ incidentId, onRefresh, expectedState, executeTransfer = transferIncident }) {
   if (!employeeAssignmentEnabled()) return null
-  return <TransferDiscovery key={incidentId} incidentId={incidentId} onRefresh={onRefresh} />
+  return <TransferDiscovery key={incidentId} incidentId={incidentId} onRefresh={onRefresh}
+    expectedState={expectedState} executeTransfer={executeTransfer} />
 }
 
-function TransferDiscovery({ incidentId, onRefresh }) {
+function TransferDiscovery({ incidentId, onRefresh, expectedState, executeTransfer }) {
   const [options, setOptions] = useState(null)
   const [revision, setRevision] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -42,16 +43,25 @@ function TransferDiscovery({ incidentId, onRefresh }) {
       if (!validId(state?.incidentId) || state.incidentId !== Number(incidentId)
           || !validId(state.sourceDepartmentId) || !validVersion(state.assignmentVersion)
           || !validVersion(state.classificationVersion) || !Array.isArray(data.destinations)) return
+      if (expectedState && (state.assignmentVersion !== expectedState.assignmentVersion
+          || state.classificationVersion !== expectedState.classificationVersion)) {
+        setFeedback({ message: 'The incident changed. Refresh pending referrals and open it again.', stale: true })
+        return
+      }
       const destinations = data.destinations.filter(department => validId(department?.departmentId)
         && department.departmentId !== state.sourceDepartmentId
         && typeof department.displayName === 'string' && department.displayName.trim())
       if (destinations.length) setOptions({ state, destinations })
+      else if (expectedState) setFeedback({ message: 'No authorized transfer route is available for this referral.' })
     }).catch(() => {
       // A disabled or denied endpoint must not reveal transfer controls.
-      if (!cancelled) setOptions(null)
+      if (!cancelled) {
+        setOptions(null)
+        if (expectedState) setFeedback({ message: 'Transfer options are unavailable for this referral. Refresh and check your access.' })
+      }
     })
     return () => { cancelled = true }
-  }, [incidentId, revision])
+  }, [incidentId, revision, expectedState])
 
   function reload(message, { refresh = false, success = false } = {}) {
     setFeedback({ message, success })
@@ -66,14 +76,14 @@ function TransferDiscovery({ incidentId, onRefresh }) {
       {feedback && <p role={feedback.success ? 'status' : 'alert'}>{feedback.message}</p>}
       {options && <>
         <h2 className="h5">Transfer Department</h2>
-        <TransferForm options={options} reload={reload} handoffs={handoffs} onHandoffChanged={reloadHandoffs} />
+        <TransferForm options={options} reload={reload} handoffs={handoffs} onHandoffChanged={reloadHandoffs} executeTransfer={executeTransfer} />
       </>}
-      {handoffs?.length > 0 && <HandoffReview key={handoffRevision} incidentId={incidentId} handoffs={handoffs} refresh={reloadHandoffs} />}
+      {!feedback?.stale && handoffs?.length > 0 && <HandoffReview key={handoffRevision} incidentId={incidentId} handoffs={handoffs} refresh={reloadHandoffs} />}
     </div>
   </section>
 }
 
-function TransferForm({ options, reload, handoffs, onHandoffChanged }) {
+function TransferForm({ options, reload, handoffs, onHandoffChanged, executeTransfer }) {
   const { state, destinations } = options
   const [destinationId, setDestinationId] = useState('')
   const [query, setQuery] = useState('')
@@ -163,7 +173,7 @@ function TransferForm({ options, reload, handoffs, onHandoffChanged }) {
     const request = sequence.current
     setSaving(true)
     try {
-      await transferIncident(state.incidentId, {
+      await executeTransfer(state.incidentId, {
         expectedSourceDepartmentId: state.sourceDepartmentId,
         destinationDepartmentId: destination.departmentId,
         destinationHandlerUserId: handler.id,

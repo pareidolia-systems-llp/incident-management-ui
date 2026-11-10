@@ -4,9 +4,12 @@ import DepartmentHeadManagement from '../components/DepartmentHeadManagement'
 import PageTitle from '../components/PageTitle'
 import useAuth from '../auth/useAuth'
 import HandlerEligibilityManagement from '../components/HandlerEligibilityManagement'
+import { DepartmentAdministrationGuide } from '../components/AdministrationGuides'
 
 export default function DepartmentAdministration() {
   const { user } = useAuth()
-  if (user?.canManageEmployees !== true) return <div className="alert alert-danger" role="alert">Access denied.</div>
-  return <><PageTitle title="Department administration" />{departmentMembershipEnabled() && <DepartmentMembershipManagement />}<DepartmentHeadManagement /><HandlerEligibilityManagement /></>
+  if (user?.canManageEmployees !== true) return <div className="alert alert-danger" role="alert">Department administration is unavailable to your account. Ask the HR access administrator to check your personnel administration permission.</div>
+  return <><PageTitle title="Department administration" />
+    <details className="mb-3"><summary>How to use Department Administration</summary><DepartmentAdministrationGuide /></details>
+    {departmentMembershipEnabled() && <DepartmentMembershipManagement />}<DepartmentHeadManagement /><HandlerEligibilityManagement /></>
 }

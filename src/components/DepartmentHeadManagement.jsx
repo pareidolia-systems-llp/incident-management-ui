@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ActiveEmployeeEmailSearch from './ActiveEmployeeEmailSearch'
 import { getHeadDepartments, getHeadDesignations, getHeadDesignationHistory, updateHeadDesignation } from '../api/employees'
+import { departmentAdministrationError } from '../utils/departmentAdministration'
 
 export default function DepartmentHeadManagement() {
   const [authorized, setAuthorized] = useState(false)
@@ -21,8 +22,8 @@ export default function DepartmentHeadManagement() {
     let cancelled = false
     Promise.all([getHeadDepartments(), getHeadDesignations()]).then(([departmentData, designationData]) => {
       if (!cancelled) { setDepartments(departmentData); setDesignations(designationData); setAuthorized(true) }
-    }).catch(() => {
-      if (!cancelled) { setDepartments([]); setDesignations([]); setSelected(null); setReview(null); setHistory(null); setAuthorized(false); setError('Department head information is unavailable.') }
+    }).catch(failure => {
+      if (!cancelled) { setDepartments([]); setDesignations([]); setSelected(null); setReview(null); setHistory(null); setAuthorized(false); setError(departmentAdministrationError(failure, 'Department-head designation information')) }
     })
     return () => { cancelled = true }
   }, [revision])
@@ -45,14 +46,15 @@ export default function DepartmentHeadManagement() {
       setReview(null);setSelected(null);setReason('');setRevision(value => value + 1);setNotice('Department-head designation saved.')
     } catch (failure) {
       const status = failure.response?.status
-      if ([401, 403, 404, 409].includes(status)) { setDesignations([]);setDepartments([]);setSelected(null);setReview(null);setHistory(null);setAuthorized(false);setRevision(value => value + 1) }
-      setError(status === 409 ? 'The designation changed. Review the latest information and try again.' : 'Unable to save the designation.')
+      if ([401, 403, 404, 409].includes(status)) { setDesignations([]);setDepartments([]);setSelected(null);setReview(null);setHistory(null);setAuthorized(false) }
+      if (status === 409) setRevision(value => value + 1)
+      setError(status === 409 ? 'The designation changed. Review the latest information and try again.' : departmentAdministrationError(failure, 'Saving department-head designations'))
     } finally { mutationInFlight.current = false; setBusy(false) }
   }
   async function loadHistory(item) {
     setHistory(null);setError('')
     try {setHistory(await getHeadDesignationHistory(item.departmentId,item.userId))}
-    catch {setDesignations([]);setDepartments([]);setSelected(null);setHistory(null);setAuthorized(false);setError('Designation history is unavailable.')}
+    catch (failure) {setDesignations([]);setDepartments([]);setSelected(null);setHistory(null);setAuthorized(false);setError(departmentAdministrationError(failure, 'Designation history'))}
   }
   return <section className="card mb-3" aria-labelledby="headsHeading"><div className="card-body">
     <h2 id="headsHeading" className="h5">Department-head designations</h2>

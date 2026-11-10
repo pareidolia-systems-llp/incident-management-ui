@@ -3,6 +3,7 @@ import EmployeeSearch from '../components/EmployeeSearch'
 import useAuth from '../auth/useAuth'
 import { createEmployee, listEmployees, updateEmployee, previewEmployee, updateEmployeeStatus, getEmployeeHistory } from '../api/employees'
 import { getErrorMessage } from '../utils/incident'
+import { EmployeeAdministrationGuide } from '../components/AdministrationGuides'
 
 function employeeError(error, fallback) {
   if ([400, 409].includes(error.response?.status) && typeof error.response.data?.message === 'string') return error.response.data.message
@@ -134,6 +135,7 @@ export default function EmployeeManagement() {
   }
   return <section>
     <h1 className="h3 mb-4">Employee Management</h1>
+    <details className="mb-3"><summary>How to manage employee records</summary><EmployeeAdministrationGuide /></details>
     {success && <div className="alert alert-success" role="status" aria-live="polite">{success}</div>}
     <div className="card border-0 shadow-sm"><div className="card-body p-4">
       <h2 className="h5 mb-3">{editing === null ? 'Add Employee' : 'Edit Employee'}</h2>

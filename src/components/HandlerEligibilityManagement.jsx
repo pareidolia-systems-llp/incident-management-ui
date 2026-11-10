@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import ActiveEmployeeEmailSearch from './ActiveEmployeeEmailSearch'
 import { getHandlerEligibilityHistory, listHandlerEligibility, updateHandlerEligibility } from '../api/employees'
+import { departmentAdministrationError } from '../utils/departmentAdministration'
 
 export default function HandlerEligibilityManagement() {
   const [grants, setGrants] = useState(null)
@@ -14,7 +15,7 @@ export default function HandlerEligibilityManagement() {
   useEffect(() => {
     let cancelled = false
     listHandlerEligibility().then(items => { if (!cancelled) { setGrants(items); setError('') } })
-      .catch(() => { if (!cancelled) { setGrants(null); setError('Eligibility information is unavailable.') } })
+      .catch(failure => { if (!cancelled) { setGrants(null); setError(departmentAdministrationError(failure, 'Handler eligibility information')) } })
     return () => { cancelled = true }
   }, [revision])
   const grant = grants?.find(item => item.userId === selected?.id)
@@ -25,12 +26,20 @@ export default function HandlerEligibilityManagement() {
     try {
       await updateHandlerEligibility(selected.id, { active, expectedVersion: grant?.version ?? null, reason: reason.trim() })
       setSelected(null); setReason(''); setHistory(null); setRevision(value => value + 1)
-    } catch { setSelected(null); setHistory(null); setGrants(null); setRevision(value => value + 1); setError('Unable to save eligibility. Review current data and authorization.') }
+    } catch (failure) {
+      setSelected(null); setHistory(null); setGrants(null)
+      setError(departmentAdministrationError(failure, 'Saving handler eligibility'))
+      if (failure.response?.status === 409) setRevision(value => value + 1)
+    }
     finally { setBusy(false) }
   }
   async function showHistory(userId) {
     try { setHistory(await getHandlerEligibilityHistory(userId)) }
-    catch { setHistory(null); setError('Eligibility history is unavailable.') }
+    catch (failure) {
+      setHistory(null)
+      if ([401, 403, 404].includes(failure.response?.status)) { setGrants(null); setSelected(null) }
+      setError(departmentAdministrationError(failure, 'Eligibility history'))
+    }
   }
   return <section className="card mb-3" aria-labelledby="eligibility-title"><div className="card-body">
     <h2 className="h5" id="eligibility-title">Handler eligibility</h2>
