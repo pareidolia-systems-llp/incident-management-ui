@@ -88,7 +88,7 @@ function CreateIncident() {
       const createdIncident = await createIncident(payload)
       if (!createdIncident?.id) throw new Error('Missing incident identifier')
       let uploadWarning = ''
-      if (!guardedIntake && files.length) {
+      if (files.length) {
         try { await uploadAttachments(createdIncident.id, files) }
         catch { uploadWarning = 'Incident was created successfully, but the screenshots could not be uploaded. Please add them using the Attachments section below.' }
       }
@@ -132,9 +132,7 @@ function CreateIncident() {
         {values.issueType === 'HR_ISSUE' && <p className="alert alert-warning">{routineHrGuidance}</p>}
         <FormSection title="Incident Details"><div className="row g-3"><TextField label="Title" name="title" required values={values} errors={errors} onChange={handleChange} /><TextField label="Description" name="description" required as="textarea" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <FormSection title="Affected System / Impact"><div className="row g-3"><TextField label="Affected System" name="affectedSystem" required values={values} errors={errors} onChange={handleChange} /><TextField label="Impacted User / Department" name="impactedUserOrDepartment" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
-        <FormSection title="Attachments">{guardedIntake
-          ? <p className="mb-0">Create the incident first. You can add screenshots from Incident Details after creation.</p>
-          : <ImagePicker files={files} onChange={setFiles} disabled={submitting} />}</FormSection>
+        <FormSection title="Attachments"><ImagePicker files={files} onChange={setFiles} disabled={submitting} /></FormSection>
         <div className="d-flex flex-wrap justify-content-end gap-2"><button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/incidents')} disabled={submitting}>Cancel</button><button type="submit" className="btn btn-primary" disabled={submitting}>{submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{submitting ? 'Creating Incidentâ€¦' : 'Create Incident'}</button></div>
       </form>
     </>

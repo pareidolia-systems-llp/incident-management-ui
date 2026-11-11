@@ -189,13 +189,17 @@ test.each([false, true])('creation remains successful when upload failure is %s'
   if (failure) expect(screen.getByRole('alert').textContent).toContain('Incident was created successfully')
   else expect(screen.queryByRole('alert')).toBeNull()
 })
-test('guarded incident creation defers screenshots until the reporter has case permission', async () => {
+test.each([false, true])('guarded incident creation preserves incident on upload failure %s', async (failure) => {
   vi.stubEnv('VITE_INCIDENT_ASSIGNMENT_ENABLED', 'true')
   apiClient.get.mockResolvedValue({ data: [{ id: 7, displayName: 'Operations (Annotation)' }] })
+  apiClient.post.mockImplementation(async (url) => {
+    if (url.endsWith('/attachments') && failure) throw new Error('Upload failed')
+    return { data: incident }
+  })
   try {
     withUser(createPage(), 'REPORTER', '/incidents/new')
-    expect(screen.getByText(/add screenshots from Incident Details after creation/)).toBeTruthy()
-    expect(screen.queryByLabelText('Screenshots / Supporting Images')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Screenshots / Supporting Images'), { target: { files: [new File(['png'], 'guarded.png', { type: 'image/png' })] } })
+    expect(screen.getByText(/guarded.png/)).toBeTruthy()
     fillCreate()
     fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
     expect(await screen.findByText('Select an active responsible department.')).toBeTruthy()
@@ -205,8 +209,11 @@ test('guarded incident creation defers screenshots until the reporter has case p
     fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
     await screen.findByText('Created incident')
     expect(apiClient.post).toHaveBeenCalledWith('/api/incidents', expect.objectContaining({ responsibleDepartmentId: 7 }))
-    expect(apiClient.post).toHaveBeenCalledTimes(1)
+    expect(apiClient.post).toHaveBeenCalledTimes(2)
     expect(apiClient.post.mock.calls[0][0]).toBe('/api/incidents')
+    expect(apiClient.post.mock.calls[1][0]).toBe('/api/incidents/12/attachments')
+    expect(apiClient.post.mock.calls[1][1].getAll('files')[0].name).toBe('guarded.png')
+    if (failure) expect(screen.getByRole('alert').textContent).toContain('Incident was created successfully')
   } finally {
     vi.unstubAllEnvs()
   }
