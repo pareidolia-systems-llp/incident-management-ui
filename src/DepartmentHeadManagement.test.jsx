@@ -41,7 +41,7 @@ test('removal sends the server version and history comes from the backend', asyn
   designations=[existing];render(<DepartmentHeadManagement />)
   fireEvent.click(await screen.findByRole('button', { name: 'View history' }))
   expect((await screen.findByLabelText('Designation audit history')).textContent).toContain('Approved')
-  fireEvent.click(screen.getByRole('button', { name: 'Select for removal' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Modify designation' }))
   fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'Role changed' } })
   fireEvent.click(screen.getByRole('button', { name: 'Review change' }));fireEvent.click(screen.getByRole('button', { name: 'Confirm change' }))
   await waitFor(() => expect(apiClient.put).toHaveBeenCalledWith('/api/admin/department-head-designations/1/8',
@@ -62,7 +62,7 @@ test.each([500, undefined])('shows technical guidance for server and network fai
 })
 test('version conflicts clear the selected account and require review again', async () => {
   designations=[existing];apiClient.put.mockRejectedValue({ response: { status: 409 } });render(<DepartmentHeadManagement />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Select for removal' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Modify designation' }))
   fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'Change' } })
   fireEvent.click(screen.getByRole('button', { name: 'Review change' }));fireEvent.click(screen.getByRole('button', { name: 'Confirm change' }))
   expect((await screen.findByRole('alert')).textContent).toContain('changed')

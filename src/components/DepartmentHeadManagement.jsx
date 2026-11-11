@@ -58,14 +58,14 @@ export default function DepartmentHeadManagement() {
   }
   return <section className="card mb-3" aria-labelledby="headsHeading"><div className="card-body">
     <h2 id="headsHeading" className="h5">Department-head designations</h2>
-    <p>Designations record responsibilities only. They do not grant incident access.</p>
+    <p>Designations record responsibilities only. They do not grant incident access or assign a handler. To replace a head, remove the current designation and designate the replacement. Each change is recorded separately.</p>
     {error && <p className="text-danger" role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
     {authorized && <>
     <h3 className="h6">Current department heads</h3>
     <ul>{designations.map(item => <li key={`${item.departmentId}-${item.userId}`}>
       {item.departmentName}: {item.name} - {item.email} ({item.active ? 'Active' : 'Removed'})
       {item.active && <button type="button" className="btn btn-link" disabled={busy || !!review}
-        onClick={() => { setDepartment(String(item.departmentId));setSelected({ id: item.userId, name: item.name, email: item.email });setActive(false);setReason('') }}>Select for removal</button>}
+        onClick={() => { setDepartment(String(item.departmentId));setSelected({ id: item.userId, name: item.name, email: item.email });setActive(false);setReason('') }}>Modify designation</button>}
       <button type="button" className="btn btn-link" onClick={() => loadHistory(item)}>View history</button>
     </li>)}</ul>
     {history && <section aria-label="Designation audit history"><h3 className="h6">Designation history</h3>
