@@ -86,7 +86,7 @@ export default function Help() {
       <ol className="help-quick-steps">
         <li>Sign in with your company Google account.</li><li>Open Create Incident (Reporter or Admin).</li>
         <li>Choose the issue type that best describes the problem. Use HR Issue for routine HR requests only if that choice is offered. For confidential material, follow your organization’s approved reporting instructions.</li>
-        {guardedAssignment && <li>Select the organizational department responsible for the issue. Reporter Department is your own department. IT handles service issues separately.</li>}
+        {guardedAssignment && <li>Select the organizational department responsible for the issue. Reporter Department is your own department. IT is available for incidents owned by IT.</li>}
         <li>Choose priority by urgency. For example, a blocked time-critical service needs faster attention than a request that can wait.</li>
         <li>Complete Title, Description, Issue Type, Category, Affected System, Severity, and Priority.</li>
         <li>Add optional screenshots after checking for sensitive information.</li><li>Submit once and wait for confirmation.</li>
