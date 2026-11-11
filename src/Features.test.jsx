@@ -191,13 +191,20 @@ test.each([false, true])('creation remains successful when upload failure is %s'
 })
 test('guarded incident creation defers screenshots until the reporter has case permission', async () => {
   vi.stubEnv('VITE_INCIDENT_ASSIGNMENT_ENABLED', 'true')
+  apiClient.get.mockResolvedValue({ data: [{ id: 7, displayName: 'Operations (Annotation)' }] })
   try {
     withUser(createPage(), 'REPORTER', '/incidents/new')
     expect(screen.getByText(/Add screenshots from Incident Details after your case permissions are approved/)).toBeTruthy()
     expect(screen.queryByLabelText('Screenshots / Supporting Images')).toBeNull()
     fillCreate()
     fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+    expect(await screen.findByText('Select an active responsible department.')).toBeTruthy()
+    expect(apiClient.post).not.toHaveBeenCalled()
+    await waitFor(() => expect(screen.getByLabelText('Responsible Department').disabled).toBe(false))
+    fireEvent.change(screen.getByLabelText('Responsible Department'), { target: { value: '7' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
     await screen.findByText('Created incident')
+    expect(apiClient.post).toHaveBeenCalledWith('/api/incidents', expect.objectContaining({ responsibleDepartmentId: 7 }))
     expect(apiClient.post).toHaveBeenCalledTimes(1)
     expect(apiClient.post.mock.calls[0][0]).toBe('/api/incidents')
   } finally {

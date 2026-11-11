@@ -66,6 +66,9 @@ function CreateIncident() {
 
     const validationErrors = validate(values)
     const responsibleDepartment = departments?.find(({ id }) => String(id) === values.responsibleDepartmentId)
+    if (guardedIntake && !responsibleDepartment) {
+      validationErrors.responsibleDepartmentId = 'Select an active responsible department.'
+    }
     if (routineHrEnabled && /^(hr|human resources)$/i.test(responsibleDepartment?.displayName.trim() ?? '')
       && ['IT_ISSUE', 'SERVICE_REQUEST'].includes(values.issueType)) {
       validationErrors.issueType = 'Select HR Issue for a routine request directed to HR.'
@@ -109,15 +112,17 @@ function CreateIncident() {
         {submitError && <div className="alert alert-danger" role="alert">{submitError}</div>}
         <FormSection title="Reporter Information"><div className="row g-3"><AuthenticatedReporter user={user} /><SelectField label="Reporter Department" name="reporterDepartment" options={reporterDepartments} formatOption={(option) => option} columnClass="col-12 col-lg-6" values={values} errors={errors} onChange={handleChange} /><TextField label="Desk Number" name="deskNumber" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <FormSection title="Responsible Department">
-          <label className="form-label fw-semibold" htmlFor="responsibleDepartmentId">Responsible Department (optional)</label>
+          <label className="form-label fw-semibold" htmlFor="responsibleDepartmentId">Responsible Department{guardedIntake ? '' : ' (optional)'}</label>
           <select id="responsibleDepartmentId" name="responsibleDepartmentId" className="form-select"
             value={values.responsibleDepartmentId} onChange={handleChange}
-            disabled={!departments?.length || submitting} aria-describedby="responsible-department-help">
+            disabled={!departments?.length || submitting} required={guardedIntake}
+            aria-invalid={Boolean(errors.responsibleDepartmentId)} aria-describedby="responsible-department-help">
             <option value="">No department selected</option>
             {departments?.map(({ id, displayName }) => <option key={id} value={id}>{displayName}</option>)}
           </select>
           <div id="responsible-department-help" className="form-text" role="status">
-            {departmentLookupFailed ? 'Responsible departments are unavailable. You can still submit the incident.'
+            {errors.responsibleDepartmentId && <p className="text-danger" role="alert">{errors.responsibleDepartmentId}</p>}
+            {departmentLookupFailed ? (guardedIntake ? 'Responsible departments are unavailable. Reload the page and try again.' : 'Responsible departments are unavailable. You can still submit the incident.')
               : !departments ? 'Loading responsible departmentsâ€¦'
               : !departments.length ? 'No responsible departments are available.'
               : 'Select the department responsible for this issue. Your reporter department stays the same.'}
