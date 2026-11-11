@@ -94,3 +94,10 @@ test('admin retains investigation, resolution, work-note and operational actions
   expect(screen.queryByRole('button', { name: 'Validate Incident' })).toBeNull()
   expect(screen.queryByText('No action required from you right now.')).toBeNull()
 })
+
+test.each([true, false])('reporter priority action follows backend permission %s', async (permitted) => {
+  incident.canChangePriority = permitted
+  await mount()
+  if (permitted) screen.getByText('More Actions').closest('details').open = true
+  expect(Boolean(screen.queryByRole('button', { name: 'Reassess Priority' }))).toBe(permitted)
+})

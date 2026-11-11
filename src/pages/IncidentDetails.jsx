@@ -211,7 +211,7 @@ function IncidentDetailsPage() {
   const canPerformOperationalActions = ['IT_HANDLER', 'ADMIN'].includes(user.role)
   const canPerformReviewActions = ['REVIEWER', 'ADMIN'].includes(user.role)
   const availableActions = [...getLifecycleActions(incident, user).filter(action => action !== 'assign' || !employeeAssignmentEnabled()), ...(canPerformOperationalActions && incident.status !== 'CLOSED' ? ['workNote'] : [])]
-  const availableOperationalActions = incident.status === 'CLOSED' || !canPerformOperationalActions ? [] : operationalActionKeys
+  const availableOperationalActions = incident.status === 'CLOSED' ? [] : canPerformOperationalActions ? operationalActionKeys : incident.canChangePriority === true ? ['priority'] : []
   return (
     <>
       <PageTitle title={incident.incidentNumber || 'Incident Details'} description={incident.title} actions={<Link className="btn btn-outline-secondary" to="/incidents">Back to Incidents</Link>} />
