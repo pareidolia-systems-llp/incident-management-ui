@@ -194,7 +194,7 @@ test('guarded incident creation defers screenshots until the reporter has case p
   apiClient.get.mockResolvedValue({ data: [{ id: 7, displayName: 'Operations (Annotation)' }] })
   try {
     withUser(createPage(), 'REPORTER', '/incidents/new')
-    expect(screen.getByText(/Add screenshots from Incident Details after your case permissions are approved/)).toBeTruthy()
+    expect(screen.getByText(/add screenshots from Incident Details after creation/)).toBeTruthy()
     expect(screen.queryByLabelText('Screenshots / Supporting Images')).toBeNull()
     fillCreate()
     fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
@@ -236,6 +236,16 @@ test('detail upload refreshes metadata and audit history', async () => {
   await waitFor(() => expect(apiClient.get.mock.calls.filter(([url]) => url.endsWith('/history'))).toHaveLength(2))
 })
 
+test('failed screenshot upload shows a safe access message without reporting success', async () => {
+  apiClient.post.mockRejectedValueOnce({ response: { status: 404, data: { message: 'sensitive backend detail' } } })
+  withUser(<Routes><Route path="/incidents/:id" element={<IncidentDetails />} /></Routes>, 'REPORTER', '/incidents/12')
+  const attachments = await screen.findByRole('region', { name: 'Attachments' })
+  fireEvent.change(attachments.querySelector('input[type=file]'), { target: { files: [new File(['png'], 'new.png', { type: 'image/png' })] } })
+  fireEvent.click(screen.getByRole('button', { name: 'Upload screenshots' }))
+  expect(await screen.findByText(/Screenshot upload is unavailable for this incident/)).toBeTruthy()
+  expect(screen.queryByText('Screenshots uploaded successfully.')).toBeNull()
+  expect(screen.queryByText('sensitive backend detail')).toBeNull()
+})
 test('IT Issue category dropdown includes infrastructure, database, endpoint and Other', () => {
   withUser(<CreateIncident />)
   fireEvent.change(screen.getByLabelText(/^Issue Type/), { target: { value: 'IT_ISSUE' } })

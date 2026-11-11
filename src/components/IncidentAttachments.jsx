@@ -28,7 +28,13 @@ export default function IncidentAttachments({ incidentId, canUpload, onUploaded 
       setNotice('Screenshots uploaded successfully.')
       await load()
       await onUploaded()
-    } catch (failure) { setError(getErrorMessage(failure, 'Screenshots could not be uploaded. Please retry.')) }
+    } catch (failure) {
+      const status = failure.response?.status
+      if (status === 401) setError('Your session has expired. Please sign in again.')
+      else if (status === 403 || status === 404) setError('Screenshot upload is unavailable for this incident. Check your access or contact support.')
+      else if (status === 400 || status === 413) setError('Check that each screenshot is a valid PNG or JPEG no larger than 5 MB, then retry.')
+      else setError(getErrorMessage(failure, 'Screenshots could not be uploaded. Please retry.'))
+    }
     finally { setBusy(false) }
   }
   async function download(item) {

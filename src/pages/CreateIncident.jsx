@@ -133,7 +133,7 @@ function CreateIncident() {
         <FormSection title="Incident Details"><div className="row g-3"><TextField label="Title" name="title" required values={values} errors={errors} onChange={handleChange} /><TextField label="Description" name="description" required as="textarea" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <FormSection title="Affected System / Impact"><div className="row g-3"><TextField label="Affected System" name="affectedSystem" required values={values} errors={errors} onChange={handleChange} /><TextField label="Impacted User / Department" name="impactedUserOrDepartment" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <FormSection title="Attachments">{guardedIntake
-          ? <p className="mb-0">Create the incident first. Add screenshots from Incident Details after your case permissions are approved.</p>
+          ? <p className="mb-0">Create the incident first. You can add screenshots from Incident Details after creation.</p>
           : <ImagePicker files={files} onChange={setFiles} disabled={submitting} />}</FormSection>
         <div className="d-flex flex-wrap justify-content-end gap-2"><button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/incidents')} disabled={submitting}>Cancel</button><button type="submit" className="btn btn-primary" disabled={submitting}>{submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{submitting ? 'Creating Incidentâ€¦' : 'Create Incident'}</button></div>
       </form>
