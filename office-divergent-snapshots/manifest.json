@@ -1,0 +1,1271 @@
+{
+  "version": 1,
+  "worktrees": [
+    {
+      "worktree": "employee-onboarding-frontend",
+      "base_commit": "f96a0d1553e72f104b44eb1b4daed35a669d6ece",
+      "files": [
+        {
+          "path": "src/App.jsx",
+          "status": "saved-source-copy",
+          "sha256": "727cbb30cb70271b861793686747036917590686cd7e91b05562bf5ae970db71",
+          "committed_sha256": "727cbb30cb70271b861793686747036917590686cd7e91b05562bf5ae970db71"
+        },
+        {
+          "path": "src/DepartmentAdministrationAccess.test.jsx",
+          "status": "saved-source-copy",
+          "sha256": "e194960469034532e024b354c8eabcaa8669081e125d9b8e1cba78383bf9448e",
+          "committed_sha256": "e194960469034532e024b354c8eabcaa8669081e125d9b8e1cba78383bf9448e"
+        },
+        {
+          "path": "src/Features.test.jsx",
+          "status": "excluded-personal-or-unrecognized-address"
+        },
+        {
+          "path": "src/components/AppLayout.jsx",
+          "status": "saved-source-copy",
+          "sha256": "e4756bbad3bb4fcb74fe7157162f4a2056315566ae76c0791b2aa411964d2041",
+          "committed_sha256": "e4756bbad3bb4fcb74fe7157162f4a2056315566ae76c0791b2aa411964d2041"
+        },
+        {
+          "path": "src/pages/CreateIncident.jsx",
+          "status": "saved-source-copy",
+          "sha256": "fa1e4728c24aec2b54a0ef9b9320c8e36ad9cf588c31da5e71ccdee8ff8101b7",
+          "committed_sha256": "fa1e4728c24aec2b54a0ef9b9320c8e36ad9cf588c31da5e71ccdee8ff8101b7"
+        },
+        {
+          "path": "src/pages/DepartmentAdministration.jsx",
+          "status": "saved-source-copy",
+          "sha256": "7331f7f93c94228e12224d859570758679ba3590a9ec04fa1309eb0bc1119e8f",
+          "committed_sha256": "7331f7f93c94228e12224d859570758679ba3590a9ec04fa1309eb0bc1119e8f"
+        }
+      ]
+    },
+    {
+      "worktree": "phase1-integration-frontend",
+      "base_commit": "76ec2fe9afffb1ed1e7a89b2f31ccae6674616e9",
+      "files": [
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/BUILD-CONFIG.txt",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "2cfbc5bf403885acf706629ef832e09b104e5abdb41b96b8286c413541362588"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/VERIFICATION.txt",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "63646831d0bd648f0fb9ad96463f3b11a0cfee03af0dc3c72c57d957864b5858"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/frontend-dist.zip",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source.zip",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/.env.development.example",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/.env.example",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/.env.production.example",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/.gitignore",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/DEPLOYMENT.md",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "6943e73f3d3659bbee32855a0a6aa4518820488ce9eb04531b9246771f03d02c"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/README.md",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "c6d8493625778ef42da41a53cc4435241ce77ef72c7c1f6138e951c9a43e9e0d"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/eslint.config.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "4b81547e17b76393f975a1c398daf9232195677bd25e2cff5d7d2dc5741f4005"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/index.html",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "79e325b592d87fc3137cbb85a5f0780d5af5ab7227737883301b216e460225f0"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/package-lock.json",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3a317186faf5fbbac358e2db0f156780391a501417cf675df79474d75dcf7bc1"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/package.json",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "28624575a9133329e829a08c315e24fda830f7303557aa23f61801dde9cac4c0"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/public/favicon.svg",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/public/icons.svg",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/server.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "07bd180208417e08f218e0723e3f044246632cc5b054f05ccb486bfde6cf71ff"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/ActiveEmployeeEmailSearch.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1076e80056e6feaaff4c7e35c8d1b19a0353b5fdd2d8c833bf82f1accb5973e8"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/Activity.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "74f44f9eebc1e75dd4ef7f367b61ea6455902b19e1d51b98931dbf4147bfbd89"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/App.css",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "d2f0894742b2774b2adb197d952eae559ffa62d043d7fd2fe89b5e96625c6cef"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/App.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "05fbb5b9755d185835ee068691c28887b167cb3b15f4fc35eb00997098677a4b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/App.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e81b9a679fbb2e0d2af086f24e2b3ee42e85f19d4db72eb31dfb5e563b806403"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/DepartmentAdministrationAccess.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "2319fd9a5ae7ee9970ac250747293ee2719b3f6add06a83ec35fdbbffd417315"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/DepartmentHeadManagement.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e01c393b6a4594d85d496adf63a19f2bd21a51584e5ce9046b7161f7d1ecefd3"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/DepartmentMailRecipients.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "66189bf80cae71256c38ed8b4099822c2a22f0693b51b0136e3acedb76a199cc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/DepartmentMembershipManagement.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "4fafeff67c9f184dd3b5aec1e6fa4f5401cc42c9bf4183e39e92fd145c3893fe"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/EmployeeManagement.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1fc1c8cde82085fb14f3f0190e115cfec2daa01244d2d876d025706ccaadc9c3"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/EmployeeSearch.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "f90e08b5bd562f48eefb2622044ad61bed1a757bc95db0176c4b0c9639cc352c"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/EvidenceAttachments.test.jsx",
+          "status": "excluded-personal-or-unrecognized-address"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/Features.test.jsx",
+          "status": "excluded-personal-or-unrecognized-address"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/FunctionalAssignment.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a407d087a45c6bd3a0bf4415af0887ca40b48b4429f5d1079d414684be2b0f19"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/GuardedIncidentApi.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "dd67a8e3bde2f4e6af6f4dc3225039857672373aa8deb2f0c71df227027b8f83"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/HandlerEligibilityManagement.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "034ace6ea80f5b60abdfadc0e36d6920c71614035733d4a40c441bb667fe50ef"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/Help.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a612aa2cdfc6690852d2bb14e866d8168012873163f4fa2f65d23c9399ff1f71"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/HrReferrals.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e2519e2cca1ef13c2bf12e0a5c87bf3bf203b7ec333637dff3fc457fbd07cb1f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/HrWorkspace.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ca7c19ef2a40d9dfa9cb786d9bf0dc6dab97295098fd2f15d5fca0496b66a439"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/IncidentDepartmentTransfer.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "8d0cefd22299b9254a42d0b7affbf7af29f7468af813a4b1ce03d57721581eaf"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/IncidentSecurityAdministration.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3f8adee76de4d9873d1b4957511d0f8eb3d021ccb8e7b8ec6ddf88837fa4ac61"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/IncidentWorkspace.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "20269fc9bd89d90b3515742ccb43d98d4ece8ac663c898dcce601ee5c6f8807d"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/InlineWorkspace.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3c3d1884b0fd368ba5152f74cbc6f2fc75ba62f8e4be23fb7a779e758176adc7"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/MyWorkLog.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a5c34dacdf02bbbbc40e99dcf3fab390bfc084c632e8b9ce682ec25da731ae8f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/OversightNotifications.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e7da1ac7e8426eea9949457dbca8ca53d3c57a3befb62ab9ac5ca68deaae60aa"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/Polling.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "238868831f2b65872452efa532accb0020d0073d804081356d1b2a04b666bea9"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/ReportRange.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "fb970c4dbc75499e5433bf768a55b566eaad6c9fcb68aeeb4a2992fe7e7434be"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/ReporterLifecycle.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "02d1b8c065906bb38600aed2018d3fc893e2f7cf34f7f118f365311586f6ef57"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/ResolutionScreenshots.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "4b2c98638464a04dcd0cd4a2492651ea383f4ce21a29a44f4d709b63daf3a885"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/assignment.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3a23f01070a0b50dd5b33d4aaf8b13a885eba9da6b09cfd9e8339643c9b3ca72"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/attachments.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "67ed72b00ad9398893cded976e71bebb35651eb85fd9cc45cb16e7f7c6d2a574"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/auth.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "dc3ccb46e0557534dbe89e030e7a66561bc95cdb8194c34496c7fd915e320b4c"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/client.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "4219d0d7ca1f8064844ea73d26c8f9f89c064acb0ef32c065c3c06ce506d7ac1"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/csrf.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "80ff5d73d0f2b542b237ba2bcdfe4c036123a8d54065c01eca2182e7e9583ecd"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/employees.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "33f0c90dc84ac2f63cef07b0fc88db23c93d1dd2234dd9af8682a70aef361458"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/hrReferrals.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "c24152bd8c828a0901f7f1961a5c535fbf5d0fe137a085e4dcb2e9cd72f88a46"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/incidentSecurity.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "b3ded1f3c3da98f0c4570085f4008f26e64eaf866741219da0293ec20aabd0e6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/incidents.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "70079750b0441bd0b37d7914e7ed3764d674a6ceaf1433bc18155a7164846980"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/reports.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3adef21f4b2a448f39e029341c59c32ccb455594e23f419379673e3bf19f510f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/api/workLogs.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a1ba85b8d0bd7a94f6f025d63c5d13d9ab214c11f93e4b8d01bcd80743eb9abb"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/assets/hero.png",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/assets/react.svg",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/assets/vite.svg",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/auth/AuthContext.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3b128e73c228bd41fa47b636f97f443df9ecf22394e6276cdc1824291f439938"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/auth/AuthProvider.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "099f4a4b7e10ae45a55b53d7f17b36a472eb3becaa8ee6bfdc88fdef550a83a8"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/auth/useAuth.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "206bce15b90c3a5125426cc35abdea5422b49aaed63f01c0b395f7d57bc4f61d"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/ActiveEmployeeEmailSearch.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "34f4c1f8f77c06c1e7bd2f4b63062a2bbb0983110c44464b2c5fb79836d3febf"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/AdministrationGuides.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "28b701ea282cda94c3ea2e21155acc45f216a372a9efcd96a0103ccc4c04f533"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/ApiState.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "dd0af8dadff06d3b8f02103f1aca29596b8d31644861aacf0c727613451ace06"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/AppLayout.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ecd4ae3b1d0c907ade4a1042f4495952226e44233171c5882adcfe914845181b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/DepartmentHeadManagement.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "73c8818ab03a598408f0fdedee2e0540334e0cb224cfd4914a28f27a69ef44d4"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/DepartmentMailRecipients.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "89841fafa0a400821fff844c93e395ce907ca61f247eda85b067c82fbb8bbebf"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/DepartmentMembershipManagement.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "6383f3508a328a64dadc32388780188f0ea095a6e97a466e45eae215471be424"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/EmployeeSearch.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "443e5085b69d5d0a0c13f28f63f1bc49b993a2e7150922b0669bf3b485469fe2"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/FieldGuidance.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "80b5780829a188f2ac22cc70c8131d04ce09efc34b332e568bcdce867b18c70b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/HandlerEligibilityManagement.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "8e220a6c195ae02016984393cee0d0ba90548283258f2e1d18c57d278d303d4f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/HandlerPicker.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "0ddfd718c73057d0a62c72a14ffe77b6d48d5dea37dec12c3c102301323d03ac"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/ImagePicker.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "d40d057abeb96b44a8894cd862ec79263e6e2f25a897836c54fe6650cc0a7335"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/IncidentAssignment.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "728015add87577542e7d50028497bc650e20e1f58f13cbafc870f60913d3a7bc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/IncidentAttachments.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "76b7c5de2321d03f2aa74d4f23c8245780653ef447b8bd5a289cd9fb2277eb9f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/IncidentBadges.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "25cee849fc1030d35fd1a6ed26332d1e70f48cf78c9518f9916d97ce783d42b9"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/IncidentDepartmentTransfer.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "7b9c07421439cce6dc712eda665510cb9d99b78caf55dda56078e5c3f8f2df90"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/IncidentLifecycleGuide.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3f5ab7709fc5bb218812657d00e036dcaed8882a8c27fcf5c5e5e8d156eb7193"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/IncidentStatusTracker.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "0413113c5a61f9bcea01b1aa9e6a08bfef75b022646b49a1d87730526ad13aa1"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/MonthlyReport.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "bcaf0a76f9dff875763e69d358a25204a5f8ba417da7a38f3aeba6fc53e36913"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/OversightNotifications.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "5f05108265a4407f814b15faa210135f5307113e660d1b4413aeff4cd5b629bc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/components/PageTitle.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "944555cd898707cb1220184d5a479f74d1093b72381630504afc21a28c973ecc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/hooks/usePolling.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "62e26fd00bc2fd3d7b51144b67c44d59199ecdecf1fcee7640c91193d1f6d13f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/index.css",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "29fc75a088bcecee94912e2437987f29f5db29664a69bd35a5f6ccae30494f78"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/main.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "44a8b20208358a2bf8b2993b189ebbb54ced076040ecacbf75db850adfbb5a1a"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/observability/faro.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a591e9788c93c6e1f7957057b257f77f346c1ce3cce3a5f1c2e7fe89573b081a"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/observability/faro.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3cd1733e61dc33257a3b7f77e385b3853c8c9941378f433235c7b3a2d0573a91"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/observability/startApplication.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "88d82efaa54aae27407bb38f1a2f26e3ee74693ba31a0a0998785734a65cc60a"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/observability/startApplication.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e6b3fee5fd24cbdda205a61c8cfa9231bc3f84d5e8ed23151d1a6ecb9da88880"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/AssignmentTriage.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "29d976575cc924cc9befd27f1571c42d799d385b281ed5fa5f355c8a6a2ce93f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/CreateIncident.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "357624a8087740a12bb88bb0ccca2c837291ef3f32d57e608f18ba1e5af15b9f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/Dashboard.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "dd05b8b98399f44b56f561eab8fa7c6d4e2600bbe9e3481c2846db8ae06d061e"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/DepartmentAdministration.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ae1854574f52de493c9a34a3304c6fb8412f913cf4a97bae1a11ec173eacd440"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/EmployeeManagement.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "026aecb0af9730e8166de82c58ea4f19a73405dcf802106022ac0992431334e6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/Help.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "121ed581f40eb6091634576829cd34b5fff04d3c69a9031fc80c5dfbf8293658"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/HrReferrals.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "423f051db7460e0cdc5e8774f3ab45b4725f3da26692a4b2ea2d80aba1d78c38"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/HrWorkspace.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "b13db10e69e36db870b452484ec9b8f674a12bcd2835ef0f5bafd82127d9544b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/IncidentDetails.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "eb2c41f5941166f2840991241f8c9589aa840e583bdec1eed31743a591b844b6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/IncidentList.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "15f76653670d3bfdc4ec8f7a0e46dec569d34dc7f1746e656bf75f30a7127cb6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/IncidentSecurityAdministration.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1967a7c39cf850d00799e5dba4bb7254f45924e55f9ab124de750828a7da22a5"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/Login.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "db7ab6db1bb67616071d391526037158b8a106a582383aecb1ed79d071c12aa3"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/MyWorkLog.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e36adb242cd0a65964fa96986801a988f9905a06dabdca5bcab0f3811c7de2fa"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/pages/NotFound.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3bb35743fee59eaa2e62b1c2fef370b06b519e67061e042f73e51c491e5ffe4f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/departmentAdministration.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "aeaecfd1136efaada6ee2aacd55893a5f8f976ef6fe7c69a20f1023c4281c8d8"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/download.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1ff978449eb8ba82f5d3f37a36f7796ac5a5ec4de4640ac86e71d19cf854630d"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incident.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "68409a9abd06ce37febb4caceaf3c704d2747fb6bc61f58a9d5f45fb4ae2b01f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incidentActionForm.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "30c139563d56d0a2504369d2a047741a819dd6852ae3afda6181122f50df269b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incidentActionForm.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "06e044b629dc85567665231061c1a25bfd678ed0aa8cbbb3665d9d716d156e86"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incidentActions.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "b466239a19eabf2e852b5e13d27680407fc914153a4e4476c82aa122ca243dbc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incidentActions.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "91c65b1f313fbbd70640921470256c48f69b082dec8abb57b85d6a18b7e76e4f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incidentGuidance.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "7b2d415711846d12862b47b73a0df78bdeb844b577bf0185f23015d56f61195f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incidentHistory.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "42fb912d652254c609666b47bfb79bd3f37e734765bc54bf2ed3c75e8d388768"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incidentHistory.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "81ea5bcc0cd9b4506420941ba02298eb1733b02efaf87d5f0b697dc63482a848"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incidentLifecycle.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1abc862c017ef4358313b7e90aae4c1986ae39e93ee0246d8fe38e9702f9731a"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/incidentOptions.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1e7dc81eeeb44f272326eb267bd43b665a3c90b8e115b80cc7806e2d735c3316"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/portalHelp.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "f037303cfe82232daad878b6283a86a4c85a1962ca829a74d43ce42be2fd6217"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/reportRange.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1f6260e3cebc4f2387561cf84013e2d8484967da62d29af97670445b044f9d59"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/reportRange.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ad0a9463b263f1f86bc1f26da30b94100c1a335fbcf8c756450df4011137c3f6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/workLog.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ef37b01525f04c14e51793f140abd9979e57ce225c2d157373c4d33ea8274bed"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/src/utils/workLog.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "58e678b90899f8809779234d1ffabc92fe3480671e3a70e6280bdcf507d69c2c"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/vite.config.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "f58edcc886dbf642f0aad60dce0c36a378df3022aa88cec76592532b12d529cc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-hrref-off/source/vitest.config.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "0ea3d73490c465f921b9a5fa5777b77ab947b593bb0c5be28474967d16f9e842"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/BUILD-CONFIG.txt",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a27f63e0325a62881549005b4bd2e9dcf8f1cb1a3bc972afa58a593cecd8d470"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/VERIFICATION.txt",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "55e6043ba104430b7447edd09a6310e8c2dda0cf54f8ee9103b6628d2a3820c5"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/frontend-dist.zip",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source.zip",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/.env.development.example",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/.env.example",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/.env.production.example",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/.gitignore",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/DEPLOYMENT.md",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "6943e73f3d3659bbee32855a0a6aa4518820488ce9eb04531b9246771f03d02c"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/README.md",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "c6d8493625778ef42da41a53cc4435241ce77ef72c7c1f6138e951c9a43e9e0d"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/eslint.config.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "4b81547e17b76393f975a1c398daf9232195677bd25e2cff5d7d2dc5741f4005"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/index.html",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "79e325b592d87fc3137cbb85a5f0780d5af5ab7227737883301b216e460225f0"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/package-lock.json",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3a317186faf5fbbac358e2db0f156780391a501417cf675df79474d75dcf7bc1"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/package.json",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "28624575a9133329e829a08c315e24fda830f7303557aa23f61801dde9cac4c0"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/public/favicon.svg",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/public/icons.svg",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/server.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "07bd180208417e08f218e0723e3f044246632cc5b054f05ccb486bfde6cf71ff"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/ActiveEmployeeEmailSearch.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1076e80056e6feaaff4c7e35c8d1b19a0353b5fdd2d8c833bf82f1accb5973e8"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/Activity.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "74f44f9eebc1e75dd4ef7f367b61ea6455902b19e1d51b98931dbf4147bfbd89"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/App.css",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "d2f0894742b2774b2adb197d952eae559ffa62d043d7fd2fe89b5e96625c6cef"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/App.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "05fbb5b9755d185835ee068691c28887b167cb3b15f4fc35eb00997098677a4b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/App.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e81b9a679fbb2e0d2af086f24e2b3ee42e85f19d4db72eb31dfb5e563b806403"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/DepartmentAdministrationAccess.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "2319fd9a5ae7ee9970ac250747293ee2719b3f6add06a83ec35fdbbffd417315"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/DepartmentHeadManagement.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e01c393b6a4594d85d496adf63a19f2bd21a51584e5ce9046b7161f7d1ecefd3"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/DepartmentMailRecipients.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "66189bf80cae71256c38ed8b4099822c2a22f0693b51b0136e3acedb76a199cc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/DepartmentMembershipManagement.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "4fafeff67c9f184dd3b5aec1e6fa4f5401cc42c9bf4183e39e92fd145c3893fe"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/EmployeeManagement.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1fc1c8cde82085fb14f3f0190e115cfec2daa01244d2d876d025706ccaadc9c3"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/EmployeeSearch.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "f90e08b5bd562f48eefb2622044ad61bed1a757bc95db0176c4b0c9639cc352c"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/EvidenceAttachments.test.jsx",
+          "status": "excluded-personal-or-unrecognized-address"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/Features.test.jsx",
+          "status": "excluded-personal-or-unrecognized-address"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/FunctionalAssignment.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a407d087a45c6bd3a0bf4415af0887ca40b48b4429f5d1079d414684be2b0f19"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/GuardedIncidentApi.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "dd67a8e3bde2f4e6af6f4dc3225039857672373aa8deb2f0c71df227027b8f83"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/HandlerEligibilityManagement.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "034ace6ea80f5b60abdfadc0e36d6920c71614035733d4a40c441bb667fe50ef"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/Help.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a612aa2cdfc6690852d2bb14e866d8168012873163f4fa2f65d23c9399ff1f71"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/HrReferrals.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e2519e2cca1ef13c2bf12e0a5c87bf3bf203b7ec333637dff3fc457fbd07cb1f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/HrWorkspace.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ca7c19ef2a40d9dfa9cb786d9bf0dc6dab97295098fd2f15d5fca0496b66a439"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/IncidentDepartmentTransfer.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "8d0cefd22299b9254a42d0b7affbf7af29f7468af813a4b1ce03d57721581eaf"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/IncidentSecurityAdministration.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3f8adee76de4d9873d1b4957511d0f8eb3d021ccb8e7b8ec6ddf88837fa4ac61"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/IncidentWorkspace.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "20269fc9bd89d90b3515742ccb43d98d4ece8ac663c898dcce601ee5c6f8807d"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/InlineWorkspace.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3c3d1884b0fd368ba5152f74cbc6f2fc75ba62f8e4be23fb7a779e758176adc7"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/MyWorkLog.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a5c34dacdf02bbbbc40e99dcf3fab390bfc084c632e8b9ce682ec25da731ae8f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/OversightNotifications.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e7da1ac7e8426eea9949457dbca8ca53d3c57a3befb62ab9ac5ca68deaae60aa"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/Polling.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "238868831f2b65872452efa532accb0020d0073d804081356d1b2a04b666bea9"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/ReportRange.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "fb970c4dbc75499e5433bf768a55b566eaad6c9fcb68aeeb4a2992fe7e7434be"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/ReporterLifecycle.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "02d1b8c065906bb38600aed2018d3fc893e2f7cf34f7f118f365311586f6ef57"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/ResolutionScreenshots.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "4b2c98638464a04dcd0cd4a2492651ea383f4ce21a29a44f4d709b63daf3a885"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/assignment.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3a23f01070a0b50dd5b33d4aaf8b13a885eba9da6b09cfd9e8339643c9b3ca72"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/attachments.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "67ed72b00ad9398893cded976e71bebb35651eb85fd9cc45cb16e7f7c6d2a574"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/auth.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "dc3ccb46e0557534dbe89e030e7a66561bc95cdb8194c34496c7fd915e320b4c"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/client.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "4219d0d7ca1f8064844ea73d26c8f9f89c064acb0ef32c065c3c06ce506d7ac1"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/csrf.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "80ff5d73d0f2b542b237ba2bcdfe4c036123a8d54065c01eca2182e7e9583ecd"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/employees.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "33f0c90dc84ac2f63cef07b0fc88db23c93d1dd2234dd9af8682a70aef361458"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/hrReferrals.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "c24152bd8c828a0901f7f1961a5c535fbf5d0fe137a085e4dcb2e9cd72f88a46"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/incidentSecurity.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "b3ded1f3c3da98f0c4570085f4008f26e64eaf866741219da0293ec20aabd0e6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/incidents.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "70079750b0441bd0b37d7914e7ed3764d674a6ceaf1433bc18155a7164846980"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/reports.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3adef21f4b2a448f39e029341c59c32ccb455594e23f419379673e3bf19f510f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/api/workLogs.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a1ba85b8d0bd7a94f6f025d63c5d13d9ab214c11f93e4b8d01bcd80743eb9abb"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/assets/hero.png",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/assets/react.svg",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/assets/vite.svg",
+          "status": "excluded-sensitive-or-nonsource-path"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/auth/AuthContext.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3b128e73c228bd41fa47b636f97f443df9ecf22394e6276cdc1824291f439938"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/auth/AuthProvider.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "099f4a4b7e10ae45a55b53d7f17b36a472eb3becaa8ee6bfdc88fdef550a83a8"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/auth/useAuth.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "206bce15b90c3a5125426cc35abdea5422b49aaed63f01c0b395f7d57bc4f61d"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/ActiveEmployeeEmailSearch.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "34f4c1f8f77c06c1e7bd2f4b63062a2bbb0983110c44464b2c5fb79836d3febf"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/AdministrationGuides.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "28b701ea282cda94c3ea2e21155acc45f216a372a9efcd96a0103ccc4c04f533"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/ApiState.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "dd0af8dadff06d3b8f02103f1aca29596b8d31644861aacf0c727613451ace06"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/AppLayout.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ecd4ae3b1d0c907ade4a1042f4495952226e44233171c5882adcfe914845181b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/DepartmentHeadManagement.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "73c8818ab03a598408f0fdedee2e0540334e0cb224cfd4914a28f27a69ef44d4"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/DepartmentMailRecipients.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "89841fafa0a400821fff844c93e395ce907ca61f247eda85b067c82fbb8bbebf"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/DepartmentMembershipManagement.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "6383f3508a328a64dadc32388780188f0ea095a6e97a466e45eae215471be424"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/EmployeeSearch.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "443e5085b69d5d0a0c13f28f63f1bc49b993a2e7150922b0669bf3b485469fe2"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/FieldGuidance.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "80b5780829a188f2ac22cc70c8131d04ce09efc34b332e568bcdce867b18c70b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/HandlerEligibilityManagement.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "8e220a6c195ae02016984393cee0d0ba90548283258f2e1d18c57d278d303d4f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/HandlerPicker.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "0ddfd718c73057d0a62c72a14ffe77b6d48d5dea37dec12c3c102301323d03ac"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/ImagePicker.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "d40d057abeb96b44a8894cd862ec79263e6e2f25a897836c54fe6650cc0a7335"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/IncidentAssignment.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "728015add87577542e7d50028497bc650e20e1f58f13cbafc870f60913d3a7bc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/IncidentAttachments.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "76b7c5de2321d03f2aa74d4f23c8245780653ef447b8bd5a289cd9fb2277eb9f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/IncidentBadges.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "25cee849fc1030d35fd1a6ed26332d1e70f48cf78c9518f9916d97ce783d42b9"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/IncidentDepartmentTransfer.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "7b9c07421439cce6dc712eda665510cb9d99b78caf55dda56078e5c3f8f2df90"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/IncidentLifecycleGuide.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3f5ab7709fc5bb218812657d00e036dcaed8882a8c27fcf5c5e5e8d156eb7193"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/IncidentStatusTracker.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "0413113c5a61f9bcea01b1aa9e6a08bfef75b022646b49a1d87730526ad13aa1"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/MonthlyReport.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "bcaf0a76f9dff875763e69d358a25204a5f8ba417da7a38f3aeba6fc53e36913"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/OversightNotifications.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "5f05108265a4407f814b15faa210135f5307113e660d1b4413aeff4cd5b629bc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/components/PageTitle.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "944555cd898707cb1220184d5a479f74d1093b72381630504afc21a28c973ecc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/hooks/usePolling.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "62e26fd00bc2fd3d7b51144b67c44d59199ecdecf1fcee7640c91193d1f6d13f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/index.css",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "29fc75a088bcecee94912e2437987f29f5db29664a69bd35a5f6ccae30494f78"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/main.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "44a8b20208358a2bf8b2993b189ebbb54ced076040ecacbf75db850adfbb5a1a"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/observability/faro.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "a591e9788c93c6e1f7957057b257f77f346c1ce3cce3a5f1c2e7fe89573b081a"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/observability/faro.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3cd1733e61dc33257a3b7f77e385b3853c8c9941378f433235c7b3a2d0573a91"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/observability/startApplication.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "88d82efaa54aae27407bb38f1a2f26e3ee74693ba31a0a0998785734a65cc60a"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/observability/startApplication.test.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e6b3fee5fd24cbdda205a61c8cfa9231bc3f84d5e8ed23151d1a6ecb9da88880"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/AssignmentTriage.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "29d976575cc924cc9befd27f1571c42d799d385b281ed5fa5f355c8a6a2ce93f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/CreateIncident.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "357624a8087740a12bb88bb0ccca2c837291ef3f32d57e608f18ba1e5af15b9f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/Dashboard.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "dd05b8b98399f44b56f561eab8fa7c6d4e2600bbe9e3481c2846db8ae06d061e"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/DepartmentAdministration.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ae1854574f52de493c9a34a3304c6fb8412f913cf4a97bae1a11ec173eacd440"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/EmployeeManagement.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "026aecb0af9730e8166de82c58ea4f19a73405dcf802106022ac0992431334e6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/Help.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "121ed581f40eb6091634576829cd34b5fff04d3c69a9031fc80c5dfbf8293658"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/HrReferrals.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "423f051db7460e0cdc5e8774f3ab45b4725f3da26692a4b2ea2d80aba1d78c38"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/HrWorkspace.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "b13db10e69e36db870b452484ec9b8f674a12bcd2835ef0f5bafd82127d9544b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/IncidentDetails.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "eb2c41f5941166f2840991241f8c9589aa840e583bdec1eed31743a591b844b6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/IncidentList.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "15f76653670d3bfdc4ec8f7a0e46dec569d34dc7f1746e656bf75f30a7127cb6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/IncidentSecurityAdministration.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1967a7c39cf850d00799e5dba4bb7254f45924e55f9ab124de750828a7da22a5"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/Login.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "db7ab6db1bb67616071d391526037158b8a106a582383aecb1ed79d071c12aa3"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/MyWorkLog.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "e36adb242cd0a65964fa96986801a988f9905a06dabdca5bcab0f3811c7de2fa"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/pages/NotFound.jsx",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "3bb35743fee59eaa2e62b1c2fef370b06b519e67061e042f73e51c491e5ffe4f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/departmentAdministration.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "aeaecfd1136efaada6ee2aacd55893a5f8f976ef6fe7c69a20f1023c4281c8d8"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/download.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1ff978449eb8ba82f5d3f37a36f7796ac5a5ec4de4640ac86e71d19cf854630d"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incident.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "68409a9abd06ce37febb4caceaf3c704d2747fb6bc61f58a9d5f45fb4ae2b01f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incidentActionForm.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "30c139563d56d0a2504369d2a047741a819dd6852ae3afda6181122f50df269b"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incidentActionForm.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "06e044b629dc85567665231061c1a25bfd678ed0aa8cbbb3665d9d716d156e86"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incidentActions.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "b466239a19eabf2e852b5e13d27680407fc914153a4e4476c82aa122ca243dbc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incidentActions.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "91c65b1f313fbbd70640921470256c48f69b082dec8abb57b85d6a18b7e76e4f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incidentGuidance.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "7b2d415711846d12862b47b73a0df78bdeb844b577bf0185f23015d56f61195f"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incidentHistory.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "42fb912d652254c609666b47bfb79bd3f37e734765bc54bf2ed3c75e8d388768"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incidentHistory.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "81ea5bcc0cd9b4506420941ba02298eb1733b02efaf87d5f0b697dc63482a848"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incidentLifecycle.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1abc862c017ef4358313b7e90aae4c1986ae39e93ee0246d8fe38e9702f9731a"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/incidentOptions.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1e7dc81eeeb44f272326eb267bd43b665a3c90b8e115b80cc7806e2d735c3316"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/portalHelp.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "f037303cfe82232daad878b6283a86a4c85a1962ca829a74d43ce42be2fd6217"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/reportRange.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "1f6260e3cebc4f2387561cf84013e2d8484967da62d29af97670445b044f9d59"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/reportRange.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ad0a9463b263f1f86bc1f26da30b94100c1a335fbcf8c756450df4011137c3f6"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/workLog.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "ef37b01525f04c14e51793f140abd9979e57ce225c2d157373c4d33ea8274bed"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/src/utils/workLog.test.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "58e678b90899f8809779234d1ffabc92fe3480671e3a70e6280bdcf507d69c2c"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/vite.config.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "f58edcc886dbf642f0aad60dce0c36a378df3022aa88cec76592532b12d529cc"
+        },
+        {
+          "path": "release-artifacts/phase1-frontend-9a82c721-provisional/source/vitest.config.js",
+          "status": "excluded-generated-release-artifact",
+          "sha256": "0ea3d73490c465f921b9a5fa5777b77ab947b593bb0c5be28474967d16f9e842"
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "saved": 5,
+    "excluded": 249,
+    "deleted": 0,
+    "already_in_snapshot": 0
+  }
+}

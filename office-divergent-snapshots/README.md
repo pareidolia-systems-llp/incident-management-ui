@@ -1,0 +1,3 @@
+# Divergent office worktree source archive
+
+These files are separate, unfinished snapshots of local work, not an integrated release or approved migration. See manifest.json for each original base commit, source path, preserved-file hash and omitted items. Compare the saved file against the original base before selectively integrating it. Deletions are recorded only. Files marked excluded remain only in the original office worktree; no excluded data is included here. The archive was screened for credentials and personal addresses; screening is not a guarantee. Excluded files remain local. Never deploy it directly.
