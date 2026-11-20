@@ -9,3 +9,5 @@ Use Node 24.21.0 and npm 11.19.0 with `npm ci`, `npm test`, and `npm run build`.
 The candidate production-origin frontend was built with department administration, membership, assignment and HR Workspace enabled; HR referrals and broad employee management disabled. Other live flag values and Nginx compatibility remain unverified. The local candidate archive is not a deployment approval.
 
 The shareable handover branch is a sanitized source snapshot based on remote main; older unpushed office commit ancestry is not transferred. Test-only company addresses were replaced with synthetic addresses. Original office branches remain local.
+
+The separate branch codex/office-uat-2026-11-20 preserves a sanitized, unfinished UAT worktree. It is not merged into this release snapshot and has not been tested as an integrated release. The original worktree remains intact.
