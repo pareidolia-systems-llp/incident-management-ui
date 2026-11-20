@@ -1,3 +1,4 @@
+import { phase2Enabled, phase2ErrorMessage } from '../phase2Feature'
 import { issueTypes, reporterDepartments, issueTypeGuide, levels, categoriesByIssueType } from '../utils/incidentOptions'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -59,7 +60,7 @@ function CreateIncident() {
       const createdIncident = await createIncident(values)
       if (!createdIncident?.id) throw new Error('Missing incident identifier')
       let uploadWarning = ''
-      if (files.length) {
+      if (!phase2Enabled && files.length) {
         try { await uploadAttachments(createdIncident.id, files) }
         catch { uploadWarning = 'Incident was created successfully, but the screenshots could not be uploaded. Please add them using the Attachments section below.' }
       }
@@ -67,7 +68,7 @@ function CreateIncident() {
     } catch (requestError) {
       const fieldErrors = getBackendFieldErrors(requestError)
       if (Object.keys(fieldErrors).length > 0) setErrors(fieldErrors)
-      setSubmitError(getErrorMessage(requestError, 'The incident could not be created. Please review the form and try again.'))
+      setSubmitError(phase2Enabled ? phase2ErrorMessage(requestError) : getErrorMessage(requestError, 'The incident could not be created. Please review the form and try again.'))
       setSubmitting(false)
     }
   }
@@ -82,7 +83,7 @@ function CreateIncident() {
         <FormSection title="Incident Details"><div className="row g-3"><TextField label="Title" name="title" required values={values} errors={errors} onChange={handleChange} /><TextField label="Description" name="description" required as="textarea" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
         <FormSection title="Classification & Priority"><div className="row g-3"><SelectField label="Issue Type" name="issueType" options={issueTypes} required values={values} errors={errors} onChange={handleChange} /><CategoryField issueType={values.issueType} values={values} errors={errors} onChange={handleChange} /><SelectField label="Severity" name="severity" options={levels} required values={values} errors={errors} onChange={handleChange} /><SelectField label="Priority" name="priority" options={levels} required values={values} errors={errors} onChange={handleChange} /></div><IssueTypeGuide /></FormSection>
         <FormSection title="Affected System / Impact"><div className="row g-3"><TextField label="Affected System" name="affectedSystem" required values={values} errors={errors} onChange={handleChange} /><TextField label="Impacted User / Department" name="impactedUserOrDepartment" values={values} errors={errors} onChange={handleChange} /></div></FormSection>
-        <FormSection title="Attachments"><ImagePicker files={files} onChange={setFiles} disabled={submitting} /></FormSection>
+        {phase2Enabled ? <div className="alert alert-info">Attachments are unavailable while the new workflow is being prepared.</div> : <FormSection title="Attachments"><ImagePicker files={files} onChange={setFiles} disabled={submitting} /></FormSection>}
         <div className="d-flex flex-wrap justify-content-end gap-2"><button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/incidents')} disabled={submitting}>Cancel</button><button type="submit" className="btn btn-primary" disabled={submitting}>{submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}{submitting ? 'Creating Incident…' : 'Create Incident'}</button></div>
       </form>
     </>

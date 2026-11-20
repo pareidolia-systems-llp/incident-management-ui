@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import AuthContext from './auth/AuthContext'
 import IncidentDetails from './pages/IncidentDetails'
@@ -93,4 +93,22 @@ test('admin retains investigation, resolution, work-note and operational actions
   }
   expect(screen.queryByRole('button', { name: 'Validate Incident' })).toBeNull()
   expect(screen.queryByText('No action required from you right now.')).toBeNull()
+})
+
+test.each([['002', '002'], [null, 'Not recorded']])('shows the saved reporter employee ID %s read-only', async (value, expected) => {
+  incident.reporterEmployeeId = value
+  await mount()
+  const label = screen.getByText('Reporter Employee ID (at creation)')
+  expect(label.nextElementSibling.textContent).toBe(expected)
+  expect(screen.queryByLabelText('Reporter Employee ID (at creation)')).toBeNull()
+})
+
+test('legacy work-note request keeps its original payload', async () => {
+  apiClient.post.mockResolvedValue({ status: 201, data: {} })
+  await mount('ADMIN')
+  fireEvent.click(screen.getByRole('button', { name: 'Log Work on This Incident', exact: true }))
+  const dialog = screen.getByRole('dialog')
+  fireEvent.change(within(dialog).getByLabelText(/^Work Note \/ Observation/), { target: { value: '  Legacy note  ' } })
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Log Work on This Incident' }))
+  await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('/api/incidents/12/work-notes', { remarks: 'Legacy note' }))
 })

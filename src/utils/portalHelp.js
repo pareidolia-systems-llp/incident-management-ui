@@ -2,7 +2,7 @@
 export const helpSections = [
   ['quick-start', 'Creating an Incident'], ['purpose', 'What This Portal Is For'],
   ['lifecycle', 'Resolution and Validation'], ['roles', 'Roles and Permissions'],
-  ['incident-types', 'Understanding Classification'], ['field-guide', 'Complete Field Guide'],
+  ['incident-types', 'Issue Types and Categories'], ['field-guide', 'Complete Field Guide'],
   ['screenshots', 'Attachments'], ['after-submission', 'What Happens After Submission'],
   ['work-logs', 'Investigation and Work Logs'], ['issue-still-persists', 'Issue Still Persists'], ['my-work-log', 'My Work Log'], ['audit-trail', 'Understanding the Audit Trail'], ['monthly-reports', 'Monthly Incident Reports'],
   ['scenarios', 'Common Scenarios'], ['faq', 'Frequently Asked Questions'],

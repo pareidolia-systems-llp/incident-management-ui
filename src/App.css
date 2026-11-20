@@ -275,3 +275,28 @@ details.help-section { margin-top: .75rem; padding: 0; }
 .inline-investigation .btn { white-space: normal; max-width: 100%; }
 .inline-resolution { padding: 1rem; border: 1px solid #cedbe6; border-radius: .4rem; background: #f8fafc; }
 .work-on-incident .work-action { flex: 0 1 22rem; padding: 0; border: 0; background: transparent; }
+
+/* Short, responsive guidance and compact incident summary. */
+.help-overview { margin: 1.25rem 0; padding: 1.4rem; border: 1px solid #d3e2ec; border-radius: .65rem; background: #f3f8fc; }
+.help-overview h2 { color: #213c5a; font-size: 1.2rem; }
+.help-overview > div > p { max-width: 72ch; }
+.help-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: .65rem; padding: 0; margin: 1rem 0; list-style: none; }
+.help-flow li { border: 1px solid #cfdfeb; border-radius: .45rem; padding: .75rem; background: #fff; }
+.help-flow strong, .help-flow span { display: block; }
+.help-flow span { color: #4b6278; font-size: .875rem; margin-top: .2rem; }
+.help-availability { color: #425a70; font-size: .9rem; max-width: 78ch; }
+.help-optional-guide { margin-top: 1.25rem; border: 1px solid #dce3eb; border-radius: .65rem; background: #fff; padding: 1rem; }
+.help-optional-guide > summary { font-weight: 700; color: #244c70; cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.help-optional-guide > summary::before { content: '▸'; margin-right: .5rem; }
+.help-optional-guide[open] > summary::before { content: '▾'; }
+.incident-summary { display: flex; flex-wrap: wrap; gap: .8rem 2rem; align-items: center; border: 1px solid #dce5ee; background: #fff; border-radius: .5rem; padding: .75rem 1rem; }
+.incident-summary > div { display: flex; align-items: center; gap: .5rem; }
+.incident-summary-label { color: #536b80; font-size: .8rem; font-weight: 700; }
+.routing-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: .65rem 1.25rem; }
+.routing-summary dt { color: #536b80; font-size: .78rem; font-weight: 700; }
+.routing-summary dd { color: #29415c; margin: .15rem 0 0; overflow-wrap: anywhere; }
+.routing-technical { color: #596e81; font-size: .8rem; }
+.routing-technical summary { cursor: pointer; min-height: 2rem; display: flex; align-items: center; }
+.routing-technical summary::before { content: '▸'; margin-right: .4rem; }
+.routing-technical[open] summary::before { content: '▾'; }
+@media (max-width: 575px) { .help-overview { padding: 1rem; } .incident-summary { gap: .65rem 1rem; } }

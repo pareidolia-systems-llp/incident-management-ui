@@ -40,9 +40,20 @@ export default function Help() {
     <header className="help-header">
       <span className="help-eyebrow">Portal guide</span>
       <PageTitle title="How to Use This Portal" description="Practical guidance for reporting, handling, reviewing and tracking incidents." />
-      <p className="mb-3 text-secondary">Take the Quick Tour, then open a topic for detailed guidance.</p>
+      <p className="mb-3 text-secondary">Choose a task below, or open a topic when you need more detail.</p>
+      <p className="help-availability mb-3">This guide describes the current portal. Department routing, restricted-case classification and in-app notifications are still being developed and are not available in the current portal.</p>
       <nav className="help-role-links" aria-label="Guidance by role"><span>Guidance for</span>{roleGuides.map(({ id, label }) => <Link key={id} to={'/help#' + id}>{label}</Link>)}</nav>
     </header>
+    <section className="help-overview" aria-labelledby="help-overview-title">
+      <div><span className="help-eyebrow">The journey</span><h2 id="help-overview-title">From report to resolution</h2>
+        <p>Report the issue, follow the progress, then test the fix. The person who reported the issue validates and closes it.</p></div>
+      <ol className="help-flow" aria-label="Incident journey">
+        <li><strong>1. Report</strong><span>Describe what happened.</span></li><li><strong>2. Investigate</strong><span>IT checks the issue.</span></li>
+        <li><strong>3. Resolve</strong><span>IT records the fix.</span></li><li><strong>4. Validate</strong><span>The reporter tests it.</span></li>
+        <li><strong>5. Close</strong><span>The reporter closes the incident.</span></li>
+      </ol>
+      <p className="mb-0"><strong>Still not fixed?</strong> Choose “Issue Still Persists” after resolution. The incident returns to IT for more work.</p>
+    </section>
     <section className="help-goals" aria-labelledby="help-goals-title">
       <h2 id="help-goals-title">What do you want to do?</h2>
       <div className="help-task-grid">{[
@@ -52,7 +63,7 @@ export default function Help() {
         ['monthly-reports', 'Generate Reports', 'Filter incidents by month or date/time range'],
       ].map(([id, title, text]) => <Link className="help-task-card" key={id} to={'/help#' + id} aria-current={hash === '#' + id ? 'location' : undefined}><strong>{title}<span aria-hidden="true"> →</span></strong><span>{text}</span></Link>)}</div>
     </section>
-    <QuickTour />
+    <details className="help-optional-guide"><summary>Explore a guided tour and examples</summary><QuickTour />
     <section className="help-comparison" aria-labelledby="action-comparison-title">
       <h2 id="action-comparison-title">Which action should I use?</h2>
       <div className="help-task-grid">{[
@@ -62,7 +73,8 @@ export default function Help() {
         ['My Work Log', 'Work performed without an incident.', 'Checked backup jobs and server health.'],
       ].map(([title, question, example]) => <div className="help-card" key={title}><h3>{title}</h3><p className="fw-semibold">{question}</p><p className="mb-0"><strong>Example:</strong> {example}</p></div>)}</div>
     </section>
-    <h2 className="mt-4" id="detailed-guide-title">Detailed Guide</h2>
+    </details>
+    <h2 className="mt-4" id="detailed-guide-title">Find more guidance</h2>
     <div className="help-navigation">
       <nav className="help-desktop-topics" aria-labelledby="help-topics-title">
         <h3 id="help-topics-title">Choose a topic</h3>
@@ -116,7 +128,7 @@ export default function Help() {
       <p>Evidence Reference is text describing a screenshot, log, ticket, or approved internal record. The actual screenshot belongs in Attachments. Successful image uploads create their own Attachment Added audit entries; the evidence update remains a separate event.</p>
     </Section>
     <Section id="issue-still-persists"><p>On a Resolved incident, the original reporter can choose Issue Still Persists. Describe what is still not working, optionally reference evidence, and select Supporting Screenshots.</p><p>Feedback saves first and returns the incident to In Progress. Screenshots then upload separately. If an upload fails, your feedback and status remain saved; retry screenshots through Attachments. Activity shows the feedback and each successful attachment as separate events.</p></Section>
-    <Section id="work-logs"><p>IT Handler and Admin use Investigation / Save Progress in the inline workspace for diagnostic findings and observations, Log Work on This Incident for actions performed without changing status, and Resolve Incident for the final fix. Less-frequent administrative updates are in More Actions.</p><h3>More Actions — IT Handler and Admin only</h3><dl className="help-more-actions">
+    <Section id="work-logs"><p>Authorized handlers may add work notes after validation. Once an incident is closed, work notes cannot be added.</p><p>IT Handler and Admin use Investigation / Save Progress in the inline workspace for diagnostic findings and observations, Log Work on This Incident for actions performed without changing status, and Resolve Incident for the final fix. Less-frequent administrative updates are in More Actions.</p><h3>More Actions — IT Handler and Admin only</h3><dl className="help-more-actions">
       <dt>Reclassify Incident</dt><dd>Use when investigation shows the original Issue Type was incorrect.</dd>
       <dt>Reassess Severity</dt><dd>Use when the actual impact becomes clearer. A reason is required and recorded in Activity.</dd>
       <dt>Reassess Priority</dt><dd>Use when urgency changes after investigation. A reason is required and recorded in Activity.</dd>

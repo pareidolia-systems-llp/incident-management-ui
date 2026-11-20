@@ -121,6 +121,8 @@ test.each(['REPORTER', 'IT_HANDLER', 'REVIEWER', 'ADMIN'])('role headings stay n
 
 test('Quick Tour starts at one, navigates both ways and stops at its boundaries', async () => {
   render(<App />)
+  await screen.findByRole('heading', { name: 'How to Use This Portal' })
+  fireEvent.click(screen.getByText('Explore a guided tour and examples'))
   await screen.findByRole('heading', { name: 'Quick Tour' })
   expect(screen.getByText('1 of 7')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Previous' }).disabled).toBe(true)
@@ -152,6 +154,8 @@ test('goal cards open matching detailed guidance and preserve informational role
 })
 test('role journeys, comparison and FAQ clearly distinguish actions', async () => {
   render(<App />)
+  await screen.findByRole('heading', { name: 'How to Use This Portal' })
+  fireEvent.click(screen.getByText('Explore a guided tour and examples'))
   await screen.findByRole('heading', { name: 'Which action should I use?' })
   for (const text of ['What did you discover?', 'What did you do?', 'Is the issue now fixed?', 'Work performed without an incident.']) expect(screen.getByText(text)).toBeTruthy()
   for (const name of ['Reporter journey', 'IT journey', 'Independent IT work']) {
@@ -168,4 +172,15 @@ test('role journeys, comparison and FAQ clearly distinguish actions', async () =
   fireEvent.click(screen.getByRole('button', { name: 'Step 6: My Work Log' }))
   expect(screen.getByText('6 of 7')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Step 6: My Work Log' }).getAttribute('aria-current')).toBe('step')
+})
+
+test('short journey explains reporting, testing a fix and current feature availability', async () => {
+  render(<App />)
+  await screen.findByRole('heading', { name: 'From report to resolution' })
+  const journey = screen.getByRole('list', { name: 'Incident journey' })
+  expect([...journey.querySelectorAll('li')].map(item => item.querySelector('strong').textContent)).toEqual(['1. Report', '2. Investigate', '3. Resolve', '4. Validate', '5. Close'])
+  expect(screen.getByText(/Still not fixed/).parentElement.textContent).toContain('Issue Still Persists')
+  expect(screen.getByText(/This guide describes the current portal/).textContent).toContain('not available in the current portal')
+  expect(document.getElementById('work-logs').textContent).toContain('after validation')
+  expect(document.getElementById('work-logs').textContent).toContain('Once an incident is closed')
 })

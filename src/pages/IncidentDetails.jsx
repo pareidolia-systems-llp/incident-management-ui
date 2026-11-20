@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
+import { phase2Enabled, phase2ErrorMessage } from '../phase2Feature'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import usePolling from '../hooks/usePolling'
 import { historyChange, historyActionLabel, historyActorLabel, historyRemarks, isFieldTransition, activityFilters, filterActivity } from '../utils/incidentHistory'
 import IncidentAttachments from '../components/IncidentAttachments'
@@ -7,7 +8,7 @@ import { reporterWaitingMessage } from '../utils/incidentLifecycle'
 import ImagePicker from '../components/ImagePicker'
 import { uploadAttachments } from '../api/attachments'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { addWorkNote, assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, reclassifyIncident, resolveIncident, reviewIncident, submitResolutionFeedback, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
+import { addWorkNote, assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, getIncidentMetadata, reclassifyIncident, resolveIncident, reviewIncident, submitResolutionFeedback, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import ApiState from '../components/ApiState'
 import { SeverityBadge, StatusBadge } from '../components/IncidentBadges'
@@ -19,7 +20,7 @@ import { getLifecycleActions } from '../utils/incidentActions'
 import { resolutionFeedbackFields, validateAction, createPayload } from '../utils/incidentActionForm'
 
 const sections = [
-  { title: 'Incident Information', fields: [['Incident Number', 'incidentNumber'], ['Title', 'title'], ['Description', 'description'], ['Reported At', 'reportedAt', 'date'], ['Reported By', 'reportedBy'], ['Reporter Department', 'reporterDepartment'], ['Desk Number', 'deskNumber'], ['Affected System', 'affectedSystem'], ['Impacted User / Department', 'impactedUserOrDepartment']] },
+  { title: 'Incident Information', fields: [['Incident Number', 'incidentNumber'], ['Title', 'title'], ['Description', 'description'], ['Reported At', 'reportedAt', 'date'], ['Reported By', 'reportedBy'], ['Reporter Employee ID (at creation)', 'reporterEmployeeId'], ['Reporter Department', 'reporterDepartment'], ['Desk Number', 'deskNumber'], ['Affected System', 'affectedSystem'], ['Impacted User / Department', 'impactedUserOrDepartment']] },
   { title: 'Classification & Priority', fields: [['Issue Type', 'issueType', 'label'], ['Category', 'category', 'label'], ['Severity', 'severity', 'severity'], ['Priority', 'priority', 'label'], ['Status', 'status', 'status']] },
   { title: 'Assignment', fields: [['Assigned Owner', 'assignedOwner']] },
   { title: 'Investigation', fields: [['Investigation Details', 'investigationDetails'], ['Root Cause', 'rootCause'], ['Actions Taken', 'actionsTaken']] },
@@ -63,6 +64,7 @@ function IncidentDetailsPage() {
   const location = useLocation()
   const { user } = useAuth()
   const [incident, setIncident] = useState(null)
+  const [metadata, setMetadata] = useState(null)
   const [history, setHistory] = useState([])
   const [state, setState] = useState('loading')
   const [error, setError] = useState('')
@@ -73,6 +75,7 @@ function IncidentDetailsPage() {
   const [actionValues, setActionValues] = useState({})
   const [actionErrors, setActionErrors] = useState({})
   const [actionError, setActionError] = useState('')
+  const [actionNotice, setActionNotice] = useState('')
   const [savingAction, setSavingAction] = useState(false)
   const [actionFiles, setActionFiles] = useState([])
   const [attachmentVersion, setAttachmentVersion] = useState(0)
@@ -83,6 +86,7 @@ function IncidentDetailsPage() {
   const [resolutionValues, setResolutionValues] = useState({})
   const [workspaceSaving, setWorkspaceSaving] = useState(false)
   const workspacePending = useRef(false)
+  const actionPending = useRef(false)
   const [workspaceError, setWorkspaceError] = useState('')
   const [workspaceErrors, setWorkspaceErrors] = useState({})
   const [workspaceNotice, setWorkspaceNotice] = useState('')
@@ -90,13 +94,26 @@ function IncidentDetailsPage() {
   const investigationDirty = investigationFiles.length > 0 || (investigationDraft !== null && actionDefinitions.investigation.fields.some(({ name }) => investigationDraft[name] !== initialActionValues(actionDefinitions.investigation, incident || {})[name]))
 
   const fetchIncident = useCallback(async (silent, current) => {
-    if (!silent) { setState('loading'); setHistoryState('loading'); setAccessDenied(false) }
-    const [incidentResult, historyResult] = await Promise.allSettled([getIncident(id), getIncidentHistory(id)])
+    if (!silent) { setState('loading'); setHistoryState('loading'); setAccessDenied(false); if (phase2Enabled) setMetadata(null) }
+    const reads = [getIncident(id), getIncidentHistory(id)]
+    if (phase2Enabled) reads.push(getIncidentMetadata(id))
+    const [incidentResult, historyResult, metadataResult] = await Promise.allSettled(reads)
     if (!current()) return
+    const metadataMatchesIncident = phase2Enabled && incidentResult.status === 'fulfilled' && metadataResult.status === 'fulfilled' &&
+      metadataResult.value.id === incidentResult.value.id && metadataResult.value.id === Number(id)
+    if (phase2Enabled && (incidentResult.status !== 'fulfilled' || metadataResult.status !== 'fulfilled' || !metadataMatchesIncident)) {
+      const failure = incidentResult.status === 'rejected' ? incidentResult.reason : metadataResult.reason
+      setIncident(null); setMetadata(null); setHistory([]); setHistoryState('ready'); setActionNotice('')
+      setActiveAction(null); setActionValues({}); setActionFiles([])
+      setAccessDenied([401, 403].includes(failure?.response?.status))
+      setError(phase2ErrorMessage(failure)); setState('error')
+      return
+    }
     if (incidentResult.status === 'fulfilled') { setIncident(incidentResult.value); setState('ready') }
-    else if (!silent) { setAccessDenied(incidentResult.reason.response?.status === 403); setError(getErrorMessage(incidentResult.reason)); setState('error') }
+    else if (!silent || (phase2Enabled && [401, 403, 404].includes(incidentResult.reason.response?.status))) { setIncident(null); setHistory([]); setAccessDenied(incidentResult.reason.response?.status === 403); setError(phase2Enabled ? phase2ErrorMessage(incidentResult.reason) : getErrorMessage(incidentResult.reason)); setState('error') }
     if (historyResult.status === 'fulfilled') { setHistory(historyResult.value); setHistoryState('ready') }
-    else if (!silent) { setHistoryError(getErrorMessage(historyResult.reason, 'We could not load the activity history. Please try again.')); setHistoryState('error') }
+    else if (!silent) { setHistoryError(phase2Enabled ? phase2ErrorMessage(historyResult.reason) : getErrorMessage(historyResult.reason, 'We could not load the activity history. Please try again.')); setHistoryState('error') }
+    if (phase2Enabled) setMetadata(metadataResult.value)
   }, [id])
   const refresh = usePolling(fetchIncident, !activeAction && !savingAction && !investigationDirty && !resolutionOpen && !workspaceSaving)
   const loadIncident = () => refresh()
@@ -108,6 +125,7 @@ function IncidentDetailsPage() {
     setActionFiles([])
     setActionErrors({})
     setActionError('')
+    setActionNotice('')
     setActiveAction(actionKey)
   }
 
@@ -124,30 +142,41 @@ function IncidentDetailsPage() {
 
   async function submitAction(event) {
     event.preventDefault()
-    if (savingAction || !activeAction) return
+    if (savingAction || !activeAction || (phase2Enabled && actionPending.current)) return
+    if (phase2Enabled && activeAction === 'workNote' && (metadata?.actions?.canAddWorkNote !== true || !Number.isSafeInteger(metadata.incidentVersion) || metadata.incidentVersion < 0)) return
     const action = actionDefinitions[activeAction]
     const validationErrors = validateAction(action, actionValues)
     if (Object.keys(validationErrors).length > 0) { setActionErrors(validationErrors); setActionError('Please correct the highlighted fields before saving.'); return }
+    if (phase2Enabled) actionPending.current = true
     setSavingAction(true)
     setActionError('')
     setActionErrors({})
     try {
-      await action.submit(id, createPayload(action, actionValues))
+      const payload = createPayload(action, actionValues)
+      if (phase2Enabled) payload.expectedVersion = metadata.incidentVersion
+      await action.submit(id, payload)
       await uploadActionScreenshots(activeAction, actionFiles)
       setActiveAction(null)
       setActionValues({})
       setActionFiles([])
+      setActionNotice(activeAction === 'workNote' ? 'Work note saved.' : 'Update saved.')
       await loadIncident()
     } catch (requestError) {
-      setActionErrors(getActionFieldErrors(requestError, action))
-      setActionError(getActionErrorMessage(requestError))
+      setActionErrors(phase2Enabled ? {} : getActionFieldErrors(requestError, action))
+      setActionError(phase2Enabled ? phase2ErrorMessage(requestError) : getActionErrorMessage(requestError))
+      if (phase2Enabled && activeAction === 'workNote' && [401, 403, 404].includes(requestError.response?.status)) {
+        setIncident(null); setMetadata(null); setHistory([]); setActiveAction(null); setActionValues({}); setActionFiles([]); setActionNotice('')
+        setAccessDenied(true); setError(phase2ErrorMessage(requestError)); setState('error')
+      } else if (phase2Enabled && requestError.response?.status === 409) await loadIncident()
     } finally {
+      actionPending.current = false
       setSavingAction(false)
     }
   }
 
 
   async function uploadActionScreenshots(actionKey, files) {
+    if (phase2Enabled) return
     if (!['evidence', 'investigation', 'resolutionFeedback'].includes(actionKey)) return
     setEvidenceUploadWarning('')
     if (files.length) {
@@ -167,8 +196,10 @@ function IncidentDetailsPage() {
 
   async function saveInvestigationDraft() {
     if (!investigationDirty) return
-    const saved = await updateInvestigation(id, createPayload(actionDefinitions.investigation, investigationValues))
-    setIncident(saved)
+    const payload = createPayload(actionDefinitions.investigation, investigationValues)
+    if (phase2Enabled) payload.expectedVersion = metadata.incidentVersion
+    const saved = await updateInvestigation(id, payload)
+    if (!phase2Enabled) setIncident(saved)
     setInvestigationDraft(null) // Keep persisted findings visible; clear one-use remarks and the dirty state.
     await uploadActionScreenshots('investigation', investigationFiles)
     setInvestigationFiles([])
@@ -188,14 +219,17 @@ function IncidentDetailsPage() {
       if (mode === 'resolve') setResolutionOpen(true)
       if (mode === 'confirm') {
         stage = actionDefinitions.resolve
-        const saved = await resolveIncident(id, createPayload(actionDefinitions.resolve, resolutionValues))
+        const payload = createPayload(actionDefinitions.resolve, resolutionValues)
+        if (phase2Enabled) payload.expectedVersion = metadata.incidentVersion
+        const saved = await resolveIncident(id, payload)
         setIncident(saved); setResolutionOpen(false); setResolutionValues({})
         setWorkspaceNotice('Incident resolved and ready for reporter validation.')
       }
       await refresh(true, false)
     } catch (failure) {
-      setWorkspaceErrors(getActionFieldErrors(failure, stage))
-      setWorkspaceError(getActionErrorMessage(failure))
+      setWorkspaceErrors(phase2Enabled ? {} : getActionFieldErrors(failure, stage))
+      setWorkspaceError(phase2Enabled ? phase2ErrorMessage(failure) : getActionErrorMessage(failure))
+      if (phase2Enabled && failure.response?.status === 409) await loadIncident()
     } finally {
       workspacePending.current = false
       setWorkspaceSaving(false)
@@ -206,14 +240,28 @@ function IncidentDetailsPage() {
   if (state === 'error') return <><PageTitle title={accessDenied ? 'Access denied' : 'Incident Details'} />{evidenceUploadWarning && <div className="alert alert-warning" role="alert">{evidenceUploadWarning}</div>}<ApiState type="error" message={error} onRetry={loadIncident} /></>
 
   const reviewCompleted = incident.status === 'CLOSED' && hasRecordedValue(incident.reviewedAt)
-  const canPerformOperationalActions = ['IT_HANDLER', 'ADMIN'].includes(user.role)
-  const canPerformReviewActions = ['REVIEWER', 'ADMIN'].includes(user.role)
-  const availableActions = [...getLifecycleActions(incident, user), ...(canPerformOperationalActions && incident.status !== 'CLOSED' ? ['workNote'] : [])]
+  const canPerformOperationalActions = !phase2Enabled && ['IT_HANDLER', 'ADMIN'].includes(user.role)
+  const canPerformReviewActions = !phase2Enabled && ['REVIEWER', 'ADMIN'].includes(user.role)
+  const phase2Actions = phase2Enabled && metadata ? [
+    ...(metadata.actions.canAddWorkNote === true && incident.status !== 'CLOSED' && metadata.status !== 'CLOSED' && Number.isSafeInteger(metadata.incidentVersion) && metadata.incidentVersion >= 0 ? ['workNote'] : []),
+    ...(metadata.actions.canInvestigate ? ['investigation'] : []),
+    ...(metadata.actions.canResolve ? ['resolve'] : []),
+    ...(metadata.actions.canValidate ? ['validate'] : []),
+    ...(metadata.actions.canRejectResolution ? ['resolutionFeedback'] : []),
+    ...(metadata.actions.canClose ? ['close'] : []),
+  ] : []
+  const availableActions = [...(phase2Enabled ? phase2Actions : getLifecycleActions(incident, user)), ...(canPerformOperationalActions && incident.status !== 'CLOSED' ? ['workNote'] : [])]
   const availableOperationalActions = incident.status === 'CLOSED' || !canPerformOperationalActions ? [] : operationalActionKeys
   return (
     <>
       <PageTitle title={incident.incidentNumber || 'Incident Details'} description={incident.title} actions={<Link className="btn btn-outline-secondary" to="/incidents">Back to Incidents</Link>} />
-      <div className="d-flex flex-wrap gap-2 mb-3"><StatusBadge status={incident.status} /><SeverityBadge severity={incident.severity} /></div>
+      <div className="incident-summary mb-3" aria-label="Incident summary">
+        <div><span className="incident-summary-label">Status</span><StatusBadge status={incident.status} /></div>
+        <div><span className="incident-summary-label">Priority</span><strong>{incident.priority ? labelize(incident.priority) : 'Not recorded'}</strong></div>
+        <div><span className="incident-summary-label">Severity</span><SeverityBadge severity={incident.severity} /></div>
+        {!phase2Enabled && <div><span className="incident-summary-label">Assigned handler</span><strong>{incident.assignedOwner || 'Not assigned'}</strong></div>}
+      </div>
+      {actionNotice && <div className="alert alert-success" role="status">{actionNotice}</div>}
       {incident.issueStillPersists && <div className="alert alert-warning" role="status">
         <h2 className="h6">Issue reported as still unresolved</h2>
         <p>The reporter confirmed that the previous resolution did not fix the issue. The incident has returned to IT for further investigation.</p>
@@ -223,23 +271,24 @@ function IncidentDetailsPage() {
       {location.state?.uploadWarning && <div className="alert alert-warning" role="alert">{location.state.uploadWarning}</div>}
       {evidenceUploadWarning && <div className="alert alert-warning" role="alert">{evidenceUploadWarning}</div>}
       <IncidentStatusTracker incident={incident} />
-      <ActionsPanel operational={canPerformOperationalActions} waitingMessage={user.role === 'REPORTER' ? reporterWaitingMessage(incident) : null} actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} disabled={workspaceSaving || savingAction} inlineWorkspace={availableActions.includes('investigation') ? <InlineWorkspace values={investigationValues} files={investigationFiles} onFilesChange={setInvestigationFiles} onChange={editInvestigation} saving={workspaceSaving || savingAction} dirty={investigationDirty} error={workspaceError} errors={workspaceErrors} notice={workspaceNotice} resolutionOpen={resolutionOpen} resolutionValues={resolutionValues} onResolutionChange={event => { setResolutionValues(current => ({ ...current, [event.target.name]: event.target.value })); setWorkspaceError(''); setWorkspaceErrors({}) }} onCancelResolution={() => setResolutionOpen(false)} onSave={() => runWorkspace('save')} onResolve={() => runWorkspace('resolve')} onConfirm={() => runWorkspace('confirm')} /> : null} />
+      {phase2Enabled && <Phase2IncidentMetadata metadata={metadata} />}
+      <ActionsPanel operational={phase2Enabled ? metadata.actions.canInvestigate : canPerformOperationalActions} waitingMessage={!phase2Enabled && user.role === 'REPORTER' ? reporterWaitingMessage(incident) : null} actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} disabled={workspaceSaving || savingAction} directResolve={phase2Enabled} inlineWorkspace={availableActions.includes('investigation') ? <InlineWorkspace values={investigationValues} files={investigationFiles} onFilesChange={setInvestigationFiles} onChange={editInvestigation} saving={workspaceSaving || savingAction} dirty={investigationDirty} error={workspaceError} errors={workspaceErrors} notice={workspaceNotice} resolutionOpen={resolutionOpen} resolutionValues={resolutionValues} onResolutionChange={event => { setResolutionValues(current => ({ ...current, [event.target.name]: event.target.value })); setWorkspaceError(''); setWorkspaceErrors({}) }} onCancelResolution={() => setResolutionOpen(false)} onSave={() => runWorkspace('save')} onResolve={() => runWorkspace('resolve')} onConfirm={() => runWorkspace('confirm')} allowResolve={!phase2Enabled} allowAttachments={!phase2Enabled} /> : null} />
       <AuditTrail history={history} state={historyState} error={historyError} onRetry={loadIncident} />
       <div className="row g-3 mb-4">{sections.map((section) => <DetailSection key={section.title} section={section} incident={incident} />)}</div>
-      <IncidentAttachments key={`${id}-${attachmentVersion}`} incidentId={id} canUpload={['REPORTER', 'IT_HANDLER', 'ADMIN'].includes(user.role)} onUploaded={() => refresh(true, false)} />
+      <IncidentAttachments key={`${id}-${attachmentVersion}`} incidentId={id} canUpload={phase2Enabled ? metadata?.actions?.canUploadAttachment === true && Number.isSafeInteger(metadata.incidentVersion) && metadata.incidentVersion >= 0 : ['REPORTER', 'IT_HANDLER', 'ADMIN'].includes(user.role)} expectedVersion={metadata?.incidentVersion} onUploaded={() => refresh(true, false)} onAccessFailure={() => { setIncident(null); setMetadata(null); setHistory([]); setAccessDenied(true); setError('This incident is unavailable.'); setState('error') }} phase2Mode={phase2Enabled} />
       {activeAction && <ActionModal currentAssessment={incident[activeAction]} actionKey={activeAction} action={actionDefinitions[activeAction]} user={user} values={actionValues} errors={actionErrors} error={actionError} saving={savingAction} files={actionFiles} onFilesChange={setActionFiles} onChange={updateActionValue} onClose={closeAction} onSubmit={submitAction} />}
     </>
   )
 }
 
-function ActionsPanel({ operational, waitingMessage, actionKeys: availableActionKeys, operationalActionKeys: activeOperationalActions, reviewCompleted, onOpen, inlineWorkspace, disabled }) {
+function ActionsPanel({ operational, waitingMessage, actionKeys: availableActionKeys, operationalActionKeys: activeOperationalActions, reviewCompleted, onOpen, inlineWorkspace, disabled, directResolve = false }) {
   const primaryOrder = ['workNote']
-  const actionKeys = availableActionKeys.filter(key => !['investigation', 'resolve'].includes(key))
+  const actionKeys = availableActionKeys.filter(key => key !== 'investigation' && (directResolve || key !== 'resolve'))
   const orderedActions = operational ? [...primaryOrder.filter((key) => actionKeys.includes(key)), ...actionKeys.filter((key) => !primaryOrder.includes(key))] : actionKeys
   return <section className={`card section-card action-panel mb-3${operational ? ' work-on-incident' : ''}`} aria-labelledby="incident-actions-title">
     <div className="card-body">
       <h2 className="h5 text-dark mb-2" id="incident-actions-title">{operational ? 'Work on Incident' : 'Actions'}</h2>
-      {!operational && <p className="text-secondary small mb-0">Available actions for the current incident status.</p>}
+      {!operational && <p className="text-secondary small mb-0">Only actions available for this incident are shown.</p>}
       {inlineWorkspace}
       <div className="incident-action-grid mt-3">
         {orderedActions.map((key) => key === 'assign' ? <div key={key} className="assignment-guidance">
@@ -267,12 +316,18 @@ function ActionsPanel({ operational, waitingMessage, actionKeys: availableAction
 }
 
 function ActionModal({ currentAssessment, actionKey, action, user, values, errors, error, saving, files, onFilesChange, onChange, onClose, onSubmit }) {
+  const dialogRef = useRef(null)
+  useEffect(() => {
+    const previous = document.activeElement
+    dialogRef.current?.querySelector('button, input, textarea, select')?.focus()
+    return () => { if (previous?.isConnected) previous.focus() }
+  }, [])
   const investigation = actionKey === 'investigation'
   const mainFields = investigation ? action.fields.filter((item) => ['investigationDetails', 'actionsTaken'].includes(item.name)) : action.fields
   const additionalFields = investigation ? action.fields.filter((item) => !['investigationDetails', 'actionsTaken'].includes(item.name)) : []
   const renderField = (item) => <ActionField key={item.name} actionKey={actionKey} field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />
   return <>
-    <div className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title">
+    <div ref={dialogRef} className="modal d-block" role="dialog" aria-modal="true" aria-labelledby="action-modal-title" onKeyDown={event => { if (event.key === 'Escape' && !saving) { event.preventDefault(); onClose() } }}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable">
         <form className="modal-content" noValidate onSubmit={onSubmit}>
           <div className="modal-header"><h2 className="modal-title fs-5" id="action-modal-title">{action.label}</h2><button type="button" className="btn-close" aria-label="Close" onClick={onClose} disabled={saving} /></div>
@@ -281,7 +336,7 @@ function ActionModal({ currentAssessment, actionKey, action, user, values, error
             {error && <div className="alert alert-danger" role="alert">{error}</div>}
             <p className="small text-secondary">Action will be recorded as {user.email}.</p>
             <div className="row g-3">{['severity', 'priority'].includes(actionKey) && <p className="mb-0">Current {actionKey}: <strong>{currentAssessment || 'Not recorded'}</strong></p>}{mainFields.map(renderField)}</div>
-            {['evidence', 'investigation', 'resolutionFeedback'].includes(actionKey) && <div className="mt-3"><ImagePicker label={actionKey === 'resolutionFeedback' ? 'Supporting Screenshots' : undefined} files={files} onChange={onFilesChange} disabled={saving} /></div>}
+            {!phase2Enabled && ['evidence', 'investigation', 'resolutionFeedback'].includes(actionKey) && <div className="mt-3"><ImagePicker label={actionKey === 'resolutionFeedback' ? 'Supporting Screenshots' : undefined} files={files} onChange={onFilesChange} disabled={saving} /></div>}
             {investigation && <details className="mt-3" open={additionalFields.some((item) => Boolean(errors[item.name])) || undefined}>
               <summary className="small fw-semibold">Additional investigation details</summary>
               <div className="row g-3 mt-1">{additionalFields.map(renderField)}</div>
@@ -296,9 +351,9 @@ function ActionModal({ currentAssessment, actionKey, action, user, values, error
 }
 
 function ActionField({ field: item, value, error, onChange, actionKey, idPrefix = 'action' }) {
-  if (item.type === 'select') return <div className="col-12 col-md-6"><label className="form-label fw-semibold" htmlFor={`${idPrefix}-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><select id={`${idPrefix}-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-select${error ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription(item.name, `${idPrefix}-${item.name}`, error)}>{item.options.map((option) => <option key={option} value={option}>{formatOptionLabel(option)}</option>)}</select>{error && <div id={`${idPrefix}-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`${idPrefix}-${item.name}`} label={item.label} /></div>
+  if (item.type === 'select') return <div className="col-12 col-md-6"><label className="form-label fw-semibold" htmlFor={`${idPrefix}-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><select id={`${idPrefix}-${item.name}`} name={item.name} value={value} onChange={onChange} aria-invalid={Boolean(error)} className={`form-select${error ? ' is-invalid' : ''}`} aria-describedby={guidanceDescription(item.name, `${idPrefix}-${item.name}`, error)}>{item.options.map((option) => <option key={option} value={option}>{formatOptionLabel(option)}</option>)}</select>{error && <div id={`${idPrefix}-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`${idPrefix}-${item.name}`} label={item.label} /></div>
   const Component = item.type === 'textarea' ? 'textarea' : 'input'
-  return <div className={item.type === 'textarea' ? 'col-12' : 'col-12 col-md-6'}><label className="form-label fw-semibold" htmlFor={`${idPrefix}-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><Component id={`${idPrefix}-${item.name}`} name={item.name} value={value} onChange={onChange} className={`form-control${error ? ' is-invalid' : ''}`} rows={item.type === 'textarea' ? 4 : undefined} aria-describedby={guidanceDescription(item.name, `${idPrefix}-${item.name}`, error)} />{error && <div id={`${idPrefix}-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`${idPrefix}-${item.name}`} label={item.label} /></div>
+  return <div className={item.type === 'textarea' ? 'col-12' : 'col-12 col-md-6'}><label className="form-label fw-semibold" htmlFor={`${idPrefix}-${item.name}`}>{item.label}{item.required && <span className="text-danger"> *</span>}</label><Component id={`${idPrefix}-${item.name}`} name={item.name} value={value} onChange={onChange} aria-invalid={Boolean(error)} className={`form-control${error ? ' is-invalid' : ''}`} rows={item.type === 'textarea' ? 4 : undefined} aria-describedby={guidanceDescription(item.name, `${idPrefix}-${item.name}`, error)} />{error && <div id={`${idPrefix}-${item.name}-error`} className="invalid-feedback">{error}</div>}<FieldGuidance actionKey={actionKey} name={item.name} id={`${idPrefix}-${item.name}`} label={item.label} /></div>
 }
 
 function DetailSection({ section, incident }) { return <section className="col-12 col-xl-6"><div className="card section-card h-100"><div className="card-body"><h2 className="h6 text-dark border-bottom pb-2 mb-3">{section.title}</h2><dl className="row mb-0">{section.fields.map(([label, fieldName, format]) => <DetailField key={fieldName} fieldName={fieldName} label={label} value={incident[fieldName]} format={format} />)}</dl></div></div></section> }
@@ -356,7 +411,24 @@ function formatOptionLabel(value) { if (value === 'MAJOR_CRITICAL_SECURITY_INCID
 
 export default IncidentDetails
 
-function InlineWorkspace({ values, files, onFilesChange, onChange, saving, dirty, error, errors, notice, resolutionOpen, resolutionValues, onResolutionChange, onCancelResolution, onSave, onResolve, onConfirm }) {
+function Phase2IncidentMetadata({ metadata }) {
+  const routingText = metadata.routingState === 'READY' ? 'Assigned and ready for handling' : metadata.routingState === 'NEEDS_TRIAGE' ? 'Waiting for assignment' : labelize(metadata.routingState)
+  return <section className="card section-card mb-3" aria-labelledby="phase2-routing-title">
+    <div className="card-body">
+      <h2 className="h6 text-dark mb-2" id="phase2-routing-title">Routing &amp; Authorization</h2>
+      <p className="small text-secondary mb-3">See who is responsible and whether the incident is ready to be handled.</p>
+      <dl className="routing-summary mb-0">
+        <div><dt>Assigned handler</dt><dd>{metadata.assignedHandler?.name || 'Not assigned'}</dd></div>
+        <div><dt>Responsible departments</dt><dd>{metadata.responsibleDepartments.length ? metadata.responsibleDepartments.map(item => item.name).join(', ') : 'Not assigned'}</dd></div>
+        <div><dt>Routing status</dt><dd>{routingText}</dd></div>
+        <div><dt>Classification</dt><dd>{metadata.classification || 'Pending classification'}</dd></div>
+      </dl>
+      <details className="routing-technical mt-2"><summary>Technical details</summary><p className="mb-0">Routing code: <code>{metadata.routingState || 'Not recorded'}</code> · Incident version: <strong>{metadata.incidentVersion}</strong> (used to prevent conflicting updates)</p></details>
+    </div>
+  </section>
+}
+
+function InlineWorkspace({ values, files, onFilesChange, onChange, saving, dirty, error, errors, notice, resolutionOpen, resolutionValues, onResolutionChange, onCancelResolution, onSave, onResolve, onConfirm, allowResolve = true, allowAttachments = true }) {
   const mainFields = actionDefinitions.investigation.fields.filter(item => ['investigationDetails', 'actionsTaken'].includes(item.name))
   const additionalFields = actionDefinitions.investigation.fields.filter(item => !['investigationDetails', 'actionsTaken'].includes(item.name))
   const renderField = item => <ActionField key={item.name} idPrefix="investigation" actionKey="investigation" field={item} value={values[item.name] || ''} error={errors[item.name]} onChange={onChange} />
@@ -367,14 +439,14 @@ function InlineWorkspace({ values, files, onFilesChange, onChange, saving, dirty
       {error && <div className="alert alert-danger" role="alert">{error}</div>}
       {notice && <div className="alert alert-success" role="status">{notice}</div>}
       <div className="row g-3">{mainFields.map(renderField)}</div>
-      <div className="mt-3"><ImagePicker files={files} onChange={onFilesChange} disabled={saving} /></div>
+      {allowAttachments && <div className="mt-3"><ImagePicker files={files} onChange={onFilesChange} disabled={saving} /></div>}
       <details className="mt-3" open={additionalFields.some(item => Boolean(errors[item.name])) || undefined}>
         <summary className="small fw-semibold">Additional investigation details</summary>
         <div className="row g-3 mt-1">{additionalFields.map(renderField)}</div>
       </details>
       <div className="d-flex flex-wrap gap-2 mt-3">
         <button type="button" className="btn btn-primary" onClick={onSave} disabled={!dirty || saving}>{saving ? 'Saving…' : 'Save Progress'}</button>
-        {!resolutionOpen && <button type="button" className="btn btn-outline-primary" onClick={onResolve}>Resolve Incident</button>}
+        {!resolutionOpen && allowResolve && <button type="button" className="btn btn-outline-primary" onClick={onResolve}>Resolve Incident</button>}
       </div>
       {resolutionOpen && <section className="inline-resolution mt-3" aria-labelledby="inline-resolution-title">
         <h3 className="h6" id="inline-resolution-title">Resolution</h3>
