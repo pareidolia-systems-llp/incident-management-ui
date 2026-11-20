@@ -15,8 +15,20 @@ export async function getIncidentHistory(id) {
   return Array.isArray(response.data) ? response.data : response.data.content || []
 }
 
-export async function createIncident(payload) {
-  const response = await apiClient.post('/api/incidents', payload)
+export async function getResponsibleDepartments() {
+  return (await apiClient.get('/api/incidents/responsible-departments')).data
+}
+
+export async function getReportingDepartment() {
+  return (await apiClient.get('/api/incidents/reporting-department')).data
+}
+
+export async function getReportingDepartments() {
+  return (await apiClient.get('/api/incidents/reporting-departments')).data
+}
+
+export async function createIncident(payload, idempotencyKey) {
+  const response = await apiClient.post('/api/incidents', payload, { headers: { 'Idempotency-Key': idempotencyKey } })
   return response.data
 }
 

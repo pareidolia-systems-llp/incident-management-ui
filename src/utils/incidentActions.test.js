@@ -41,7 +41,7 @@ test('Assign, investigation, resolve and review retain their existing role and s
   for (const role of ['REVIEWER', 'ADMIN', 'REPORTER', 'IT_HANDLER']) {
     const user = { role, email: 'other@example.test' }
     const operational = ['IT_HANDLER', 'ADMIN'].includes(role)
-    assert.deepEqual(getLifecycleActions({ ...incident, status: 'OPEN' }, user), operational ? ['assign'] : [])
+    assert.deepEqual(getLifecycleActions({ ...incident, status: 'OPEN' }, user), operational ? ['investigation'] : [])
     for (const status of ['ASSIGNED', 'IN_PROGRESS']) {
       assert.deepEqual(getLifecycleActions({ ...incident, status }, user), operational ? ['investigation', 'resolve'] : [])
     }
@@ -75,4 +75,15 @@ test('validation fails closed for missing or blank reporter or actor email', () 
     assert.deepEqual(getLifecycleActions(resolved, { role: 'ADMIN', email }), [])
     assert.deepEqual(getLifecycleActions({ ...resolved, reportedBy: email }, { role: 'ADMIN', email }), [])
   }
+})
+
+
+test('case-authorized reporter receives handling actions without reporter-only actions on another case', () => {
+  const user = { role: 'REPORTER', email: 'handler@example.test' }
+  const item = { reportedBy: 'reporter@example.test', canHandleAssignedCase: true }
+  assert.deepEqual(getLifecycleActions({ ...item, status: 'ASSIGNED' }, user), ['investigation', 'resolve'])
+  assert.deepEqual(getLifecycleActions({ ...item, status: 'IN_PROGRESS' }, user), ['investigation', 'resolve'])
+  assert.deepEqual(getLifecycleActions({ ...item, status: 'RESOLVED' }, user), [])
+  assert.deepEqual(getLifecycleActions({ ...item, status: 'VALIDATED' }, user), [])
+  assert.deepEqual(getLifecycleActions({ ...item, canHandleAssignedCase: false, status: 'ASSIGNED' }, user), [])
 })

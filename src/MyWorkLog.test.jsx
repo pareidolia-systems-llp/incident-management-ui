@@ -9,6 +9,7 @@ import apiClient from './api/client'
 vi.mock('./api/client', () => ({ default: { get: vi.fn(), post: vi.fn() } }))
 beforeEach(() => { vi.resetAllMocks(); apiClient.get.mockResolvedValue({ data: [] }); localStorage.clear() })
 afterEach(cleanup)
+const workLogRequests = () => apiClient.get.mock.calls.filter(([url]) => url === '/api/work-logs')
 function Location() { return <output data-testid="route">{useLocation().pathname}</output> }
 function setup(role = 'IT_HANDLER') {
   return render(<AuthContext.Provider value={{ user: { role, email: 'operator@example.test', displayName: 'Operator' }, logout: vi.fn() }}>
@@ -38,7 +39,7 @@ test.each(['REPORTER', 'REVIEWER'])('%s has neither navigation nor direct-route 
   expect(screen.queryByRole('link', { name: 'My Work Log' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Add Work Entry' })).toBeNull()
   expect(screen.getByRole('alert').textContent).toContain('do not have permission')
-  expect(apiClient.get).not.toHaveBeenCalled()
+  expect(workLogRequests()).toHaveLength(0)
 })
 test('validates fields before sending and preserves entered work', async () => {
   setup(); await open()
@@ -63,7 +64,7 @@ test('saves only editable fields, stays on the page and refreshes the list', asy
   expect(screen.getByText('Checked connectivity')).toBeTruthy()
   expect(screen.queryByRole('dialog')).toBeNull()
   expect(screen.getByTestId('route').textContent).toBe('/work-logs')
-  expect(apiClient.get).toHaveBeenCalledTimes(2)
+  expect(workLogRequests()).toHaveLength(2)
   expect(apiClient.post).toHaveBeenCalledExactlyOnceWith('/api/work-logs', { workedAt: '2026-10-15T15:40:00', category: 'MAINTENANCE', summary: 'Updated firewall rules', details: 'Checked connectivity', durationMinutes: 30 })
 })
 test('renders backend order and optional duration without re-sorting', async () => {
@@ -80,13 +81,13 @@ test('save failure retains input and permits retry', async () => {
   await screen.findByRole('alert')
   expect(screen.getByLabelText(/Summary/).value).toBe(' Updated firewall rules ')
   expect(screen.getByRole('dialog')).toBeTruthy()
-  expect(apiClient.get).toHaveBeenCalledTimes(1)
+  expect(workLogRequests()).toHaveLength(1)
 })
 test('refresh failure after save does not resubmit or reopen the form', async () => {
   setup(); await open(); fill(); apiClient.post.mockResolvedValue({ data: {} }); apiClient.get.mockRejectedValue(new Error('offline'))
   fireEvent.click(screen.getByRole('button', { name: 'Save Work Entry' }))
   await screen.findByText('Work entry saved successfully.')
-  await waitFor(() => expect(apiClient.get).toHaveBeenCalledTimes(2))
+  await waitFor(() => expect(workLogRequests()).toHaveLength(2))
   expect(screen.queryByRole('dialog')).toBeNull()
   expect(apiClient.post).toHaveBeenCalledTimes(1)
 })

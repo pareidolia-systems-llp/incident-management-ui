@@ -12,17 +12,20 @@ import { saveDownload } from './utils/download'
 
 vi.mock('./api/client', () => ({ default: { get: vi.fn(), post: vi.fn() } }))
 vi.mock('./utils/download', () => ({ saveDownload: vi.fn() }))
-const user = { role: 'REPORTER', email: 'owner@pareidolia.in', displayName: 'Owner' }
+const user = { role: 'REPORTER', email: 'owner@example.test', displayName: 'Owner' }
 const logout = vi.fn()
 const incident = { id: 12, incidentNumber: 'INC-12', title: 'Test incident', status: 'ASSIGNED', reportedBy: user.email }
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  sessionStorage.clear()
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
-  apiClient.get.mockImplementation(async (url) => ({ data: url.endsWith('/attachments') || url.endsWith('/history') ? [] : url.endsWith('/12') ? incident : [] }))
+  apiClient.get.mockImplementation(async (url) => ({ data: url.endsWith('/responsible-departments') ? [{ id: 7, displayName: 'IT' }]
+    : url.endsWith('/reporting-departments') ? [{ id: 5, displayName: 'R&D' }]
+    : url.endsWith('/attachments') || url.endsWith('/history') ? [] : url.endsWith('/12') ? incident : [] }))
   apiClient.post.mockResolvedValue({ data: incident })
 })
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.unstubAllEnvs() })
 function withUser(component, role = 'REPORTER', route = '/') {
   return render(<AuthContext.Provider value={{ user: { ...user, role }, logout }}><MemoryRouter initialEntries={[route]}>{component}</MemoryRouter></AuthContext.Provider>)
 }
@@ -99,7 +102,10 @@ function Destination() {
 function createPage() {
   return <Routes><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/12" element={<Destination />} /></Routes>
 }
-function fillCreate() {
+async function fillCreate(selectDepartment = true) {
+  await waitFor(() => expect(screen.getByLabelText('Responsible Department').disabled).toBe(false))
+  fireEvent.change(screen.getByLabelText('Reporter Department'), { target: { value: '5' } })
+  if (selectDepartment) fireEvent.change(screen.getByLabelText('Responsible Department'), { target: { value: '7' } })
   for (const [label, value] of [['Title', 'VPN'], ['Description', 'VPN disconnects'], ['Affected System', 'VPN client']]) {
     fireEvent.change(screen.getByLabelText(new RegExp('^' + label)), { target: { value } })
   }
@@ -108,9 +114,41 @@ function fillCreate() {
   fireEvent.change(screen.getByLabelText(/^Severity/), { target: { value: 'LOW' } })
   fireEvent.change(screen.getByLabelText(/^Priority/), { target: { value: 'LOW' } })
 }
+test('creation retries retain a key while a new form uses a new key', async () => {
+  apiClient.post.mockRejectedValueOnce(new Error('Synthetic network failure'))
+  const view = withUser(createPage(), 'REPORTER', '/incidents/new')
+  await fillCreate()
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByRole('alert')
+  const firstKey = apiClient.post.mock.calls[0][2].headers['Idempotency-Key']
+  expect(firstKey).toMatch(/^[0-9a-f-]{36}$/)
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post.mock.calls[1][2].headers['Idempotency-Key']).toBe(firstKey)
+  view.unmount()
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await fillCreate()
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post.mock.calls[2][2].headers['Idempotency-Key']).not.toBe(firstKey)
+})
+test('creation retry retains its key after the form is reopened in the same tab', async () => {
+  apiClient.post.mockRejectedValueOnce(new Error('Synthetic network failure'))
+  const view = withUser(createPage(), 'REPORTER', '/incidents/new')
+  await fillCreate()
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByRole('alert')
+  const key = apiClient.post.mock.calls[0][2].headers['Idempotency-Key']
+  view.unmount()
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await fillCreate()
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post.mock.calls[1][2].headers['Idempotency-Key']).toBe(key)
+})
 test('create without images preserves JSON and does not submit actor fields', async () => {
   withUser(createPage(), 'REPORTER', '/incidents/new')
-  fillCreate()
+  await fillCreate()
   fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
   await screen.findByText('Created incident')
   expect(apiClient.post).toHaveBeenCalledOnce()
@@ -118,6 +156,172 @@ test('create without images preserves JSON and does not submit actor fields', as
   expect(url).toBe('/api/incidents')
   expect(payload.title).toBe('VPN')
   expect(payload.reportedBy).toBeUndefined()
+  expect(payload.responsibleDepartmentId).toBe(7)
+  expect(payload).not.toHaveProperty('reporterDepartment')
+})
+test('submits an independent responsible department ID and handles a rejected selection', async () => {
+  apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/reporting-departments') ? [{ id: 5, displayName: 'R&D' }] : [{ id: 7, displayName: 'IT' }, { id: 9, displayName: 'HR' }] }))
+  apiClient.post.mockRejectedValueOnce({ response: { status: 400, data: { message: 'Select an active responsible department.' } } })
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByRole('option', { name: 'IT' })
+  expect(apiClient.get).toHaveBeenCalledWith('/api/incidents/responsible-departments')
+  expect(screen.getByLabelText('Reporter Department').tagName).toBe('SELECT')
+  expect(screen.getByRole('option', { name: 'R&D' })).toBeTruthy()
+  const responsible = screen.getByLabelText('Responsible Department')
+  fireEvent.change(responsible, { target: { value: '7' } })
+  await fillCreate()
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  expect((await screen.findByRole('alert')).textContent).toContain('Select an active responsible department.')
+  expect(apiClient.post).toHaveBeenCalledWith('/api/incidents', expect.objectContaining({
+    responsibleDepartmentId: 7, issueType: 'IT_ISSUE',
+  }), expect.objectContaining({ headers: expect.objectContaining({ 'Idempotency-Key': expect.any(String) }) }))
+  expect(screen.getByLabelText(/^Title/).value).toBe('VPN')
+  fireEvent.change(responsible, { target: { value: '' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  expect(await screen.findByText('Select an active responsible department.')).toBeTruthy()
+  expect(apiClient.post).toHaveBeenCalledTimes(1)
+})
+test('incident creation requires a responsible department and never submits a claimed reporter department', async () => {
+  apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/reporting-departments') ? [{ id: 5, displayName: 'R&D' }] : [{ id: 7, displayName: 'IT' }] }))
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByRole('option', { name: 'IT' })
+  expect(screen.getByLabelText('Reporter Department').tagName).toBe('SELECT')
+  expect(screen.getByRole('option', { name: 'R&D' })).toBeTruthy()
+  await fillCreate(false)
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  expect(await screen.findByText('Select an active responsible department.')).toBeTruthy()
+  expect(apiClient.post).not.toHaveBeenCalled()
+  fireEvent.change(screen.getByLabelText('Responsible Department'), { target: { value: '7' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post.mock.calls[0][1]).toMatchObject({ responsibleDepartmentId: 7 })
+  expect(apiClient.post.mock.calls[0][1]).not.toHaveProperty('reporterDepartment')
+})
+test('both department lists use all five active options and submit independent IDs', async () => {
+  const departments = [
+    { id: 7, displayName: 'IT' }, { id: 10, displayName: 'HR' },
+    { id: 8, displayName: 'Operations (Annotation)' },
+    { id: 9, displayName: 'Operations (Perioperative Flow Analysis)' },
+    { id: 5, displayName: 'R&D' },
+  ]
+  apiClient.get.mockImplementation(async url => {
+    if (url === '/api/incidents/reporting-departments' || url === '/api/incidents/responsible-departments') return { data: departments }
+    throw new Error('Unexpected department request')
+  })
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await fillCreate()
+  const reporter = screen.getByLabelText('Reporter Department')
+  const responsible = screen.getByLabelText('Responsible Department')
+  expect(Array.from(reporter.options).slice(1).map(option => option.textContent)).toEqual(departments.map(item => item.displayName))
+  expect(Array.from(responsible.options).slice(1).map(option => option.textContent)).toEqual(departments.map(item => item.displayName))
+  expect(reporter.value).toBe('5')
+  expect(responsible.value).toBe('7')
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post).toHaveBeenCalledWith('/api/incidents', expect.objectContaining({
+    reporterDepartmentId: 5, responsibleDepartmentId: 7,
+  }), expect.objectContaining({ headers: expect.objectContaining({ 'Idempotency-Key': expect.any(String) }) }))
+})
+test('reporter chooses an available operational department', async () => {
+  apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/reporting-departments')
+    ? [{ id: 5, displayName: 'R&D' }, { id: 8, displayName: 'Operations (Annotation)' }]
+    : [{ id: 7, displayName: 'IT' }] }))
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await fillCreate()
+  fireEvent.change(screen.getByLabelText('Reporter Department'), { target: { value: '8' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post.mock.calls[0][1]).toMatchObject({ reporterDepartmentId: 8, responsibleDepartmentId: 7 })
+})
+test.each([[8, 'Operations (Annotation)'], [9, 'Operations (Perioperative Flow Analysis)']])(
+  'reporter can choose operational context %s independently of IT', async (id, label) => {
+    apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/reporting-departments')
+      ? [{ id: 5, displayName: 'R&D' }, { id: 8, displayName: 'Operations (Annotation)' }, { id: 9, displayName: 'Operations (Perioperative Flow Analysis)' }]
+      : [{ id: 7, displayName: 'IT' }] }))
+    withUser(createPage(), 'REPORTER', '/incidents/new')
+    await fillCreate()
+    expect(screen.getByText(/This does not establish department membership/)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Reporter Department'), { target: { value: String(id) } })
+    expect(screen.getByLabelText('Reporter Department').selectedOptions[0].textContent).toBe(label)
+    fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+    await screen.findByText('Created incident')
+    expect(apiClient.post.mock.calls[0][1]).toMatchObject({ reporterDepartmentId: id, responsibleDepartmentId: 7 })
+  },
+)
+test('HR issue has no category and displays a confidentiality warning before submission', async () => {
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await fillCreate()
+  fireEvent.change(screen.getByLabelText(/^Issue Type/), { target: { value: 'HR_ISSUE' } })
+  expect(screen.getByText('Do not use this form to report sensitive or confidential HR matters.')).toBeTruthy()
+  expect(screen.getByLabelText(/^Category/).disabled).toBe(true)
+  expect(screen.getByLabelText(/^Category/).selectedOptions[0].textContent).toBe('Not applicable')
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  await screen.findByText('Created incident')
+  expect(apiClient.post).toHaveBeenCalledWith('/api/incidents',
+    expect.objectContaining({ issueType: 'HR_ISSUE', responsibleDepartmentId: 7 }), expect.any(Object))
+  expect(apiClient.post.mock.calls[0][1]).not.toHaveProperty('category')
+})
+test('HR issue is available without enabling the legacy HR frontend flag', async () => {
+  vi.stubEnv('VITE_ROUTINE_HR_ISSUES_ENABLED', 'false')
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByRole('option', { name: 'IT' })
+  expect(screen.getByRole('option', { name: 'HR Issue' })).toBeTruthy()
+  fireEvent.change(screen.getByLabelText(/^Issue Type/), { target: { value: 'HR_ISSUE' } })
+  fireEvent.change(screen.getByLabelText(/^Issue Type/), { target: { value: 'IT_ISSUE' } })
+  expect(screen.getByLabelText(/^Category/).disabled).toBe(false)
+  expect(screen.queryByText('Do not use this form to report sensitive or confidential HR matters.')).toBeNull()
+})
+test('HR issue still requires a separately selected responsible department', async () => {
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await fillCreate(false)
+  fireEvent.change(screen.getByLabelText(/^Issue Type/), { target: { value: 'HR_ISSUE' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+  expect(await screen.findByText('Select an active responsible department.')).toBeTruthy()
+  expect(screen.getByLabelText(/^Category/).disabled).toBe(true)
+  expect(apiClient.post).not.toHaveBeenCalled()
+})
+test('creation is blocked when department lookup fails or incident access is disabled', async () => {
+  apiClient.get.mockRejectedValue({ response: { status: 403 } })
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByText(/Incident creation or department information is unavailable/)
+  expect(screen.getByLabelText('Responsible Department').disabled).toBe(true)
+  expect(screen.getByRole('button', { name: 'Create Incident' }).disabled).toBe(true)
+  expect(apiClient.post).not.toHaveBeenCalled()
+})
+test('an empty reporting department list blocks creation with a clear message', async () => {
+  apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/reporting-departments') ? [] : [{ id: 7, displayName: 'IT' }] }))
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByText(/No reporter departments are currently available/)
+  expect(screen.getByRole('button', { name: 'Create Incident' }).disabled).toBe(true)
+  expect(apiClient.post).not.toHaveBeenCalled()
+})
+test('creation is blocked when the reporting department lookup is unavailable', async () => {
+  apiClient.get.mockImplementation(async url => {
+    if (url.endsWith('/reporting-departments')) throw { response: { status: 400 } }
+    return { data: [{ id: 7, displayName: 'IT' }] }
+  })
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByText(/Incident creation or department information is unavailable/)
+  expect(screen.getByLabelText('Reporter Department').disabled).toBe(true)
+  expect(screen.getByRole('button', { name: 'Create Incident' }).disabled).toBe(true)
+  expect(apiClient.post).not.toHaveBeenCalled()
+})
+test('responsible department selection does not change issue type or categories', async () => {
+  apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/reporting-departments') ? [{ id: 5, displayName: 'R&D' }] : [{ id: 7, displayName: 'IT' }, { id: 8, displayName: 'Operations (Annotation)' }] }))
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await fillCreate()
+  const before = [...screen.getByLabelText(/^Category/).options].map(option => option.value)
+  fireEvent.change(screen.getByLabelText('Responsible Department'), { target: { value: '8' } })
+  expect(screen.getByLabelText(/^Issue Type/).value).toBe('IT_ISSUE')
+  expect([...screen.getByLabelText(/^Category/).options].map(option => option.value)).toEqual(before)
+  expect(screen.getByLabelText('Reporter Department').value).toBe('5')
+})
+test('creation is blocked when the responsible department list is empty', async () => {
+  apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/reporting-departments') ? [{ id: 5, displayName: 'R&D' }] : [] }))
+  withUser(createPage(), 'REPORTER', '/incidents/new')
+  await screen.findByText('No responsible departments are available.')
+  expect(screen.getByRole('button', { name: 'Create Incident' }).disabled).toBe(true)
+  expect(apiClient.post).not.toHaveBeenCalled()
 })
 test.each([false, true])('creation remains successful when upload failure is %s', async (failure) => {
   apiClient.post.mockImplementation(async (url) => {
@@ -128,7 +332,7 @@ test.each([false, true])('creation remains successful when upload failure is %s'
     return { data: incident }
   })
   withUser(createPage(), 'REPORTER', '/incidents/new')
-  fillCreate()
+  await fillCreate()
   const file = new File(['png'], 'screen.png', { type: 'image/png' })
   fireEvent.change(screen.getByLabelText('Screenshots / Supporting Images'), { target: { files: [file] } })
   fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
@@ -138,6 +342,35 @@ test.each([false, true])('creation remains successful when upload failure is %s'
   expect([...apiClient.post.mock.calls[1][1].keys()]).toEqual(['files'])
   if (failure) expect(screen.getByRole('alert').textContent).toContain('Incident was created successfully')
   else expect(screen.queryByRole('alert')).toBeNull()
+})
+test.each([false, true])('guarded incident creation preserves incident on upload failure %s', async (failure) => {
+  vi.stubEnv('VITE_INCIDENT_ASSIGNMENT_ENABLED', 'true')
+  apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/reporting-departments') ? [{ id: 5, displayName: 'R&D' }] : [{ id: 7, displayName: 'Operations (Annotation)' }] }))
+  apiClient.post.mockImplementation(async (url) => {
+    if (url.endsWith('/attachments') && failure) throw new Error('Upload failed')
+    return { data: incident }
+  })
+  try {
+    withUser(createPage(), 'REPORTER', '/incidents/new')
+    fireEvent.change(screen.getByLabelText('Screenshots / Supporting Images'), { target: { files: [new File(['png'], 'guarded.png', { type: 'image/png' })] } })
+    expect(screen.getByText(/guarded.png/)).toBeTruthy()
+    await fillCreate(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+    expect(await screen.findByText('Select an active responsible department.')).toBeTruthy()
+    expect(apiClient.post).not.toHaveBeenCalled()
+    await waitFor(() => expect(screen.getByLabelText('Responsible Department').disabled).toBe(false))
+    fireEvent.change(screen.getByLabelText('Responsible Department'), { target: { value: '7' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
+    await screen.findByText('Created incident')
+    expect(apiClient.post).toHaveBeenCalledWith('/api/incidents', expect.objectContaining({ responsibleDepartmentId: 7 }), expect.any(Object))
+    expect(apiClient.post).toHaveBeenCalledTimes(2)
+    expect(apiClient.post.mock.calls[0][0]).toBe('/api/incidents')
+    expect(apiClient.post.mock.calls[1][0]).toBe('/api/incidents/12/attachments')
+    expect(apiClient.post.mock.calls[1][1].getAll('files')[0].name).toBe('guarded.png')
+    if (failure) expect(screen.getByRole('alert').textContent).toContain('Incident was created successfully')
+  } finally {
+    vi.unstubAllEnvs()
+  }
 })
 test('selected screenshot can be removed before creation', () => {
   withUser(createPage(), 'REPORTER', '/incidents/new')
@@ -161,9 +394,19 @@ test('detail upload refreshes metadata and audit history', async () => {
   fireEvent.change(picker, { target: { files: [new File(['png'], 'new.png', { type: 'image/png' })] } })
   fireEvent.click(screen.getByRole('button', { name: 'Upload screenshots' }))
   expect(await screen.findByText('Screenshots uploaded successfully.')).toBeTruthy()
-  await waitFor(() => expect(apiClient.get.mock.calls.filter(([url]) => url.endsWith('/history'))).toHaveLength(2))
+  await waitFor(() => expect(apiClient.get.mock.calls.filter(([url]) => url === '/api/incidents/12/history')).toHaveLength(2))
 })
 
+test('failed screenshot upload shows a safe access message without reporting success', async () => {
+  apiClient.post.mockRejectedValueOnce({ response: { status: 404, data: { message: 'sensitive backend detail' } } })
+  withUser(<Routes><Route path="/incidents/:id" element={<IncidentDetails />} /></Routes>, 'REPORTER', '/incidents/12')
+  const attachments = await screen.findByRole('region', { name: 'Attachments' })
+  fireEvent.change(attachments.querySelector('input[type=file]'), { target: { files: [new File(['png'], 'new.png', { type: 'image/png' })] } })
+  fireEvent.click(screen.getByRole('button', { name: 'Upload screenshots' }))
+  expect(await screen.findByText(/Screenshot upload is unavailable for this incident/)).toBeTruthy()
+  expect(screen.queryByText('Screenshots uploaded successfully.')).toBeNull()
+  expect(screen.queryByText('sensitive backend detail')).toBeNull()
+})
 test('IT Issue category dropdown includes infrastructure, database, endpoint and Other', () => {
   withUser(<CreateIncident />)
   fireEvent.change(screen.getByLabelText(/^Issue Type/), { target: { value: 'IT_ISSUE' } })
@@ -181,7 +424,7 @@ test('reporter severity and priority guidance explains the initial assessment an
 
 test('creation immediately fetches and displays assigned server state without waiting for polling', async () => {
   withUser(<Routes><Route path="/incidents/new" element={<CreateIncident />} /><Route path="/incidents/:id" element={<IncidentDetails />} /></Routes>, 'REPORTER', '/incidents/new')
-  fillCreate()
+  await fillCreate()
   fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
   expect(await screen.findByText('Assigned (current)')).toBeTruthy()
   expect(apiClient.get).toHaveBeenCalledWith('/api/incidents/12')

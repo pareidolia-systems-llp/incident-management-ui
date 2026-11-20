@@ -14,7 +14,7 @@ beforeEach(() => {
   apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/history') ? history : url.endsWith('/attachments') ? attachments : incident }))
   apiClient.post.mockImplementation(save)
 })
-afterEach(() => { cleanup(); vi.useRealTimers() })
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllEnvs() })
 async function save(url, payload) {
   if (url.endsWith('/attachments')) {
     attachments = [{ id: 1, originalFilename: 'vpn.png', fileSize: 3 }]
@@ -32,8 +32,8 @@ async function save(url, payload) {
   return { data: incident }
 }
 function Location() { return <output aria-label="Current route">{useLocation().pathname}</output> }
-async function mount(role = 'ADMIN') {
-  render(<AuthContext.Provider value={{ user: { role, email: role === 'REPORTER' ? incident.reportedBy : 'it@example.test' } }}><MemoryRouter initialEntries={['/incidents/12']}><Location /><Routes><Route path="/incidents/:id" element={<IncidentDetails />} /></Routes></MemoryRouter></AuthContext.Provider>)
+async function mount(role = 'ADMIN', email = role === 'REPORTER' ? incident.reportedBy : 'it@example.test') {
+  render(<AuthContext.Provider value={{ user: { role, email } }}><MemoryRouter initialEntries={['/incidents/12']}><Location /><Routes><Route path="/incidents/:id" element={<IncidentDetails />} /></Routes></MemoryRouter></AuthContext.Provider>)
   await screen.findByRole('heading', { name: 'INC-12' })
 }
 const work = () => screen.getByRole('region', { name: 'Work on Incident' })
@@ -59,12 +59,53 @@ test.each(['ADMIN', 'IT_HANDLER'])('%s can immediately edit findings/actions in 
   edit()
   expect(within(work()).getByRole('button', { name: 'Save Progress' }).disabled).toBe(false)
 })
-test.each(['OPEN', 'RESOLVED', 'VALIDATED', 'CLOSED'])('%s does not expose editable investigation', async status => {
+test.each(['RESOLVED', 'VALIDATED', 'CLOSED'])('%s does not expose editable investigation', async status => {
   incident.status = status
   await mount()
   expect(screen.queryByLabelText(/^Investigation Details/)).toBeNull()
   expect(screen.queryByLabelText(/^Actions Taken/)).toBeNull()
   expect(screen.queryByRole('button', { name: 'Save Progress' })).toBeNull()
+})
+test.each(['ADMIN', 'IT_HANDLER'])('%s can begin investigation of an OPEN case without assigning it', async role => {
+  incident.status = 'OPEN'
+  await mount(role)
+  expect(screen.queryByRole('button', { name: 'Assign Incident' })).toBeNull()
+  expect(Boolean(screen.queryByRole('region', { name: 'Employee assignment' }))).toBe(import.meta.env.VITE_INCIDENT_ASSIGNMENT_ENABLED === 'true')
+  expect(within(work()).getByLabelText(/^Investigation Details/)).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Resolve Incident' })).toBeNull()
+  edit()
+  fireEvent.click(within(work()).getByRole('button', { name: 'Save Progress' }))
+  await screen.findByText('Investigation progress saved.')
+  expect(apiClient.post.mock.calls.map(([url]) => url)).toEqual(['/api/incidents/12/investigation'])
+  expect(screen.getByText(/In Progress \(current\)/)).toBeTruthy()
+  expect(within(work()).getByRole('button', { name: 'Resolve Incident' })).toBeTruthy()
+  expect(apiClient.get.mock.calls.filter(([url]) => url.endsWith('/12')).length).toBeGreaterThanOrEqual(2)
+  expect(await screen.findByText('Investigation Updated')).toBeTruthy()
+})
+test.each([403, 404])('OPEN case denied by backend (%s) stays OPEN and does not expose resolution', async status => {
+  incident.status = 'OPEN'
+  apiClient.post.mockRejectedValue({ response: { status } })
+  await mount(); edit()
+  fireEvent.click(within(work()).getByRole('button', { name: 'Save Progress' }))
+  await within(work()).findByRole('alert')
+  expect(screen.getByText(/Reported \(current\)/)).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Resolve Incident' })).toBeNull()
+  expect(apiClient.post.mock.calls.map(([url]) => url)).toEqual(['/api/incidents/12/investigation'])
+})
+test.each(['REPORTER', 'REVIEWER'])('%s has no investigation workspace for an OPEN case', async role => {
+  incident.status = 'OPEN'
+  await mount(role)
+  expect(screen.queryByLabelText(/^Investigation Details/)).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Resolve Incident' })).toBeNull()
+})
+test('assignment-enabled mode retains the separate assignment panel', async () => {
+  vi.stubEnv('VITE_INCIDENT_ASSIGNMENT_ENABLED', 'true')
+  incident.status = 'OPEN'
+  await mount()
+  expect(screen.getByRole('region', { name: 'Employee assignment' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Assign Incident' })).toBeNull()
+  expect(screen.getByLabelText(/^Investigation Details/)).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Resolve Incident' })).toBeNull()
 })
 test('reporter cannot see operational fields', async () => {
   await mount('REPORTER')
@@ -149,4 +190,39 @@ test('focus and polling cannot remove local investigation, images, or inline res
   expect(within(work()).getByLabelText(/^Investigation Details/).value).toBe('Certificate expired')
   expect(within(work()).getByLabelText(/^Resolution Details/).value).toBe('Draft resolution')
   expect(within(work()).getByRole('button', { name: 'Remove vpn.png' })).toBeTruthy()
+})
+
+
+test('backend read-only case capabilities hide work and modification controls for an HR admin', async () => {
+  incident = { ...incident, authorizationCapabilitiesAvailable: true, canHandleIncident: false, canModifyIncident: false, canChangePriority: false }
+  await mount('ADMIN', 'hr@example.test')
+  expect(screen.queryByLabelText(/^Investigation Details/)).toBeNull()
+  expect(screen.queryByRole('button', { name: /^(Resolve Incident|Change Priority|Log Work on This Incident)$/i })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Upload screenshots' })).toBeNull()
+})
+
+test('case-authorized reporter can investigate and resolve without gaining administration', async () => {
+  incident = { ...incident, authorizationCapabilitiesAvailable: true, canHandleAssignedCase: true, canHandleIncident: true, canModifyIncident: false, canChangePriority: false }
+  await mount('REPORTER', 'handler@example.test')
+  expect(within(work()).getByLabelText(/^Investigation Details/)).toBeTruthy()
+  expect(within(work()).getByRole('button', { name: 'Resolve Incident' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: /Change Priority|Assign Incident|Close Incident/i })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Upload screenshots' })).toBeNull()
+})
+
+test('read-only HR admin does not receive closed-case review controls', async () => {
+  incident = { ...incident, status: 'CLOSED', authorizationCapabilitiesAvailable: true, canHandleIncident: false, canModifyIncident: false }
+  await mount('ADMIN', 'hr@example.test')
+  expect(screen.queryByRole('button', { name: /review incident/i })).toBeNull()
+})
+test('original reporter retains attachment upload for a case with server capabilities', async () => {
+  incident = { ...incident, authorizationCapabilitiesAvailable: true, canHandleIncident: false, canModifyIncident: false }
+  await mount('REPORTER', ' REPORTER@example.test ')
+  expect(screen.getByRole('button', { name: 'Upload screenshots' })).toBeTruthy()
+})
+
+test('case-authorized operational actor with modify permission retains attachment upload', async () => {
+  incident = { ...incident, authorizationCapabilitiesAvailable: true, canHandleIncident: true, canModifyIncident: true }
+  await mount('IT_HANDLER', 'handler@example.test')
+  expect(screen.getByRole('button', { name: 'Upload screenshots' })).toBeTruthy()
 })

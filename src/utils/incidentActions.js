@@ -1,7 +1,7 @@
-const actionsByStatus = { OPEN: ['assign'], ASSIGNED: ['investigation', 'resolve'], IN_PROGRESS: ['investigation', 'resolve'], RESOLVED: ['validate', 'resolutionFeedback'], VALIDATED: ['close'], CLOSED: ['review'] }
+const actionsByStatus = { OPEN: ['investigation'], ASSIGNED: ['investigation', 'resolve'], IN_PROGRESS: ['investigation', 'resolve'], RESOLVED: ['validate', 'resolutionFeedback'], VALIDATED: ['close'], CLOSED: ['review'] }
 
 export function getLifecycleActions(incident, user) {
-  const canPerformOperationalActions = ['IT_HANDLER', 'ADMIN'].includes(user.role)
+  const canPerformOperationalActions = ['IT_HANDLER', 'ADMIN'].includes(user.role) || incident.canHandleAssignedCase === true
   const canPerformReviewActions = ['REVIEWER', 'ADMIN'].includes(user.role)
   const reviewCompleted = incident.reviewedAt != null && String(incident.reviewedAt).trim() !== ''
   const actorEmail = typeof user.email === 'string' ? user.email.trim().toLowerCase() : ''

@@ -6,20 +6,20 @@ import { clearCsrfToken } from './api/csrf'
 import { helpFieldLinks, helpSections } from './utils/portalHelp'
 import { fieldGuidance } from './utils/incidentGuidance'
 vi.mock('./api/client', () => ({ backendBaseUrl: 'http://backend.test', default: { get: vi.fn(), post: vi.fn() } }))
-let role
+let role, canManageEmployees
 beforeEach(() => {
-  role = 'REPORTER'
+  role = 'REPORTER'; canManageEmployees = false
   vi.clearAllMocks()
   clearCsrfToken()
   localStorage.clear()
   window.history.replaceState({}, '', '/help')
   apiClient.get.mockImplementation(async url => {
     if (url === '/api/auth/csrf') return { data: { headerName: 'X-XSRF-TOKEN', token: 'test' } }
-    if (url === '/api/auth/me' && role) return { data: { role, email: 'owner@example.test', displayName: 'Owner' } }
+    if (url === '/api/auth/me' && role) return { data: { role, email: 'owner@example.test', displayName: 'Owner', canManageEmployees } }
     throw { response: { status: 401 } }
   })
 })
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.unstubAllEnvs() })
 test.each(['REPORTER', 'IT_HANDLER', 'REVIEWER', 'ADMIN'])('help is available to authenticated %s with relevant shortcuts', async value => {
   role = value
   render(<App />)
@@ -29,7 +29,7 @@ test.each(['REPORTER', 'IT_HANDLER', 'REVIEWER', 'ADMIN'])('help is available to
   expect(Boolean(screen.queryByRole('link', { name: 'Open monthly reports in Incidents' }))).toBe(['IT_HANDLER', 'ADMIN'].includes(role))
   for (const [id] of helpSections) expect(document.getElementById(id)).toBeTruthy()
   expect(apiClient.post).not.toHaveBeenCalled()
-  expect(apiClient.get.mock.calls.every(([url]) => ['/api/auth/me', '/api/auth/csrf'].includes(url))).toBe(true)
+  expect(apiClient.get.mock.calls.every(([url]) => ['/api/auth/me', '/api/auth/csrf', '/api/incident-assignment/triage'].includes(url))).toBe(true)
 })
 test('help requires authentication', async () => {
   role = null
@@ -71,6 +71,14 @@ test('help preserves shared definitions, required people examples, security and 
   expect(document.getElementById('lifecycle').textContent).toContain('status remains Closed')
   expect(screen.getByLabelText('Sensitive information warning').textContent).toContain('session cookies')
   expect(document.getElementById('monthly-reports').textContent).toContain('not a month-end snapshot')
+})
+test('help describes HR Issue and its confidentiality warning without the legacy flag', async () => {
+  vi.stubEnv('VITE_ROUTINE_HR_ISSUES_ENABLED', 'false')
+  render(<App />)
+  await screen.findByRole('heading', { name: 'How to Use This Portal' })
+  expect(document.getElementById('availability').textContent).toContain('Do not use this form to report sensitive or confidential HR matters.')
+  expect(document.getElementById('availability').textContent).not.toContain('HR Issue is unavailable')
+  expect(document.getElementById('incident-types').textContent).toContain('Category is not applicable for HR Issue.')
 })
 test('compact help navigation retains its icon, title and saved preference', async () => {
   localStorage.setItem('incidentSidebarCollapsed', 'true')
@@ -174,11 +182,17 @@ test('role journeys, comparison and FAQ clearly distinguish actions', async () =
 test('production guide separates current assignment and email from development-only access workflows', async () => {
   render(<App />)
   await screen.findByRole('heading', { name: 'How to Use This Portal' })
-  expect(screen.getByLabelText('Guide availability').textContent).toContain('awaiting authorization and release')
-  expect(document.getElementById('assignment').textContent).toContain('automatically assigned')
+  expect(screen.getByLabelText('Guide availability').textContent).toContain('some actions require separate permission')
+  const assignment = document.getElementById('assignment').textContent
+  if (import.meta.env.VITE_INCIDENT_ASSIGNMENT_ENABLED === 'true') {
+    expect(assignment).toContain('remain unassigned until the designated IT Head acknowledges and assigns')
+    expect(assignment).toContain('Search results do not grant case access')
+  } else {
+    expect(assignment).toContain('automatically assigned')
+  }
   expect(document.getElementById('notifications').textContent).toContain('no separate in-app notification inbox')
-  expect(document.getElementById('notifications').textContent).toContain('Portal-link email improvements are awaiting release')
-  expect(document.getElementById('availability').textContent).toContain('HR colleagues follow the permissions of their assigned portal role')
+  expect(document.getElementById('notifications').textContent).toContain('If email is enabled')
+  expect(document.getElementById('availability').textContent).toContain('IT administrators do not automatically receive access')
   expect(document.getElementById('sign-in').textContent).toContain('Sign Out')
   expect(apiClient.post).not.toHaveBeenCalled()
 })
@@ -190,4 +204,28 @@ test.each(['sign-in', 'assignment', 'notifications', 'availability'])('new topic
   expect(window.location.hash).toBe('#' + id)
   expect(document.getElementById(id).open).toBe(true)
   expect(document.activeElement).toBe(document.querySelector('#' + id + ' > summary'))
+})
+
+test('disabled workflows and unauthorized administration do not produce actionable instructions', async () => {
+  vi.stubEnv('VITE_DEPARTMENT_ADMIN_ENABLED', 'true')
+  vi.stubEnv('VITE_DEPARTMENT_MEMBERSHIP_ADMIN_ENABLED', 'true')
+  vi.stubEnv('VITE_INCIDENT_ASSIGNMENT_ENABLED', 'false')
+  render(<App />)
+  await screen.findByRole('heading', { name: 'How to Use This Portal' })
+  expect(document.getElementById('assignment').textContent).toContain('department transfer are unavailable')
+  expect(document.getElementById('availability').textContent).not.toContain('choose a department and an active employee')
+})
+
+test('approved employee administrators receive guidance only for enabled panels', async () => {
+  role = 'ADMIN'
+  canManageEmployees = true
+  vi.stubEnv('VITE_EMPLOYEE_MANAGEMENT_ENABLED', 'true')
+  vi.stubEnv('VITE_DEPARTMENT_ADMIN_ENABLED', 'true')
+  vi.stubEnv('VITE_DEPARTMENT_MEMBERSHIP_ADMIN_ENABLED', 'true')
+  render(<App />)
+  await screen.findByRole('heading', { name: 'How to Use This Portal' })
+  const guide = document.getElementById('availability').textContent
+  expect(guide).toContain('Authorized HR staff and IT administrators use Employee Management')
+  expect(guide).toContain('If the Department memberships panel appears')
+  expect(guide).toContain('Transfer handoff requests and decisions are unavailable')
 })

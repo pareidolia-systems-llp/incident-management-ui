@@ -39,7 +39,13 @@ test.each(['ADMIN', 'IT_HANDLER'])('%s has a single workspace immediately above 
   expect(within(work).getByLabelText(/^Investigation Details/)).toBeTruthy()
   expect(within(work).getByLabelText(/^Actions Taken/)).toBeTruthy()
   for (const name of ['Save Progress', 'Resolve Incident', 'Log Work on This Incident']) expect(within(work).getByRole('button', { name, exact: true })).toBeTruthy()
-  expect(work.previousElementSibling.getAttribute('aria-labelledby')).toBe('incident-progress-title')
+  const previous = work.previousElementSibling
+  if (import.meta.env.VITE_INCIDENT_ASSIGNMENT_ENABLED === 'true') {
+    expect(previous.getAttribute('aria-label')).toBe('Employee assignment')
+    expect(previous.previousElementSibling.getAttribute('aria-labelledby')).toBe('incident-progress-title')
+  } else {
+    expect(previous.getAttribute('aria-labelledby')).toBe('incident-progress-title')
+  }
   expect(work.nextElementSibling.id).toBe('incident-activity')
   expect(screen.getAllByRole('region', { name: 'Activity & Work Log' })).toHaveLength(1)
   expect(within(work).getByRole('link', { name: 'Activity & Work Log' }).getAttribute('href')).toBe('#incident-activity')

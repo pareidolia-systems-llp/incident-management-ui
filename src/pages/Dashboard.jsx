@@ -3,6 +3,7 @@ import usePolling from '../hooks/usePolling'
 import { getIncidents } from '../api/incidents'
 import ApiState from '../components/ApiState'
 import PageTitle from '../components/PageTitle'
+import OversightNotifications from '../components/OversightNotifications'
 import { getErrorMessage, readField } from '../utils/incident'
 
 const statDefinitions = [
@@ -45,6 +46,7 @@ function Dashboard() {
   return (
     <>
       <PageTitle title="Dashboard" description="Current incident workload and operational status." />
+      {import.meta.env.VITE_INCIDENT_OVERSIGHT_ENABLED === 'true' && <OversightNotifications />}
       {state === 'loading' && <ApiState type="loading" />}
       {state === 'error' && <ApiState type="error" message={error} onRetry={loadIncidents} />}
       {state === 'ready' && (
