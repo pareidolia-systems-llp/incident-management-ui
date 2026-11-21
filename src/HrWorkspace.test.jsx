@@ -17,6 +17,9 @@ beforeEach(() => {
   apiClient.get.mockImplementation(async url => {
     if (url === '/api/auth/me') return { data: { canAccessHrWorkspace: true } }
     if (url === '/api/incidents') return { data: incidents }
+    if (url === '/api/incident-assignment/20') return { data: { handler: { id: 5, name: 'HR Resolver', email: 'hr-resolver@example.test' } } }
+    if (url === '/api/incident-assignment/19') return { data: { handler: { id: 6, name: 'IT Resolver', email: 'it-resolver@example.test' } } }
+    if (url === '/api/incident-assignment/22') return { data: { handler: null } }
     if (url === '/api/incidents/19') return { data: { ...incidents[1], investigationDetails: 'Investigating', resolutionDetails: 'Fixed' } }
     if (url === '/api/incidents/19/history') return { data: [{ id: 1, actionType: 'WORK_NOTE', changedBy: 'it@example.test', remarks: 'Reviewed' }, { id: 2, actionType: 'OWNER_ASSIGNED', changedBy: 'head@example.test', oldValue: 'Old handler', newValue: 'New handler' }, { id: 3, actionType: 'INVESTIGATION_UPDATED', changedBy: 'handler@example.test', newValue: 'Prior investigation' }] }
     if (url === '/api/incident-assignment/19/acknowledgement') return { data: { actorId: 4, acknowledgedAt: '2026-11-16T10:00:00' } }
@@ -49,6 +52,30 @@ test('HR cases and case-granted oversight are separate and oversight is read-onl
   expect(within(detail).getByText(/by account 4/)).toBeTruthy()
   expect(within(detail).queryByRole('button', { name: /assign|resolve|close|priority/i })).toBeNull()
   expect(within(detail).queryByRole('link', { name: /open/i })).toBeNull()
+})
+
+test('shows protected assignment state instead of a missing or stale owner snapshot', async () => {
+  show({ canAccessHrWorkspace: true })
+  const hrRow = (await screen.findByText('SYN-HR')).closest('tr')
+  expect(await within(hrRow).findByText('HR Resolver')).toBeTruthy()
+  fireEvent.click(screen.getByRole('tab', { name: 'Department Oversight' }))
+  const itRow = screen.getByText('SYN-IT').closest('tr')
+  expect(await within(itRow).findByText('IT Resolver')).toBeTruthy()
+  expect(within(itRow).queryByText('handler@example.test')).toBeNull()
+  expect(await within(screen.getByText('SYN-RD').closest('tr')).findByText('Unassigned')).toBeTruthy()
+  expect(apiClient.get.mock.calls.map(([url]) => url)).not.toContain('/api/incident-assignment/21')
+})
+
+test('does not claim a handler is unassigned when protected state cannot be read', async () => {
+  apiClient.get.mockImplementation(async url => {
+    if (url === '/api/auth/me') return { data: { canAccessHrWorkspace: true } }
+    if (url === '/api/incidents') return { data: incidents }
+    throw { response: { status: 403 } }
+  })
+  show({ canAccessHrWorkspace: true })
+  const row = (await screen.findByText('SYN-HR')).closest('tr')
+  expect(await within(row).findByText('Unavailable')).toBeTruthy()
+  expect(within(row).queryByText('Unassigned')).toBeNull()
 })
 
 test('role alone does not expose HR workspace or load incident data', () => {

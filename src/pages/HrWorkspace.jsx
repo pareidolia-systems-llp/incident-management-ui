@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import useAuth from '../auth/useAuth'
 import { getIncident, getIncidentHistory, getIncidents } from '../api/incidents'
 import { getCurrentUser } from '../api/auth'
-import { getAcknowledgement } from '../api/assignment'
+import { getAcknowledgement, getAssignment } from '../api/assignment'
 import IncidentStatusTracker from '../components/IncidentStatusTracker'
 import PageTitle from '../components/PageTitle'
 import { formatDate, labelize } from '../utils/incident'
@@ -24,6 +24,7 @@ export default function HrWorkspace() {
   const [acknowledgement, setAcknowledgement] = useState(null)
   const [detailError, setDetailError] = useState('')
   const [detailLoading, setDetailLoading] = useState(false)
+  const [assignments, setAssignments] = useState({})
 
   useEffect(() => {
     if (user?.canAccessHrWorkspace !== true) return
@@ -44,7 +45,7 @@ export default function HrWorkspace() {
     getCurrentUser().then(current => {
       if (!live) return null
       if (current?.canAccessHrWorkspace !== true) {
-        setItems([]); setDetail(null); setHistory([]); setAcknowledgement(null); setStatus('denied')
+        setItems([]); setAssignments({}); setDetail(null); setHistory([]); setAcknowledgement(null); setStatus('denied')
         return null
       }
       // Recheck the case-specific oversight marker: a reporter can retain separate
@@ -82,6 +83,35 @@ export default function HrWorkspace() {
     ? items.filter(item => isHrDepartment(item))
     : oversight.filter(item => !filter || item.responsibleDepartmentName === filter)
 
+  useEffect(() => {
+    if (status !== 'ready') return
+    let live = true
+    const authorized = items.filter(item => isHrDepartment(item) || item.hrOversightView === true)
+    let next = 0
+    setAssignments({})
+    async function worker() {
+      while (live && next < authorized.length) {
+        const item = authorized[next++]
+        try {
+          const state = await getAssignment(item.id)
+          if (live) setAssignments(previous => ({ ...previous, [item.id]: state }))
+        } catch {
+          if (live) setAssignments(previous => ({ ...previous, [item.id]: null }))
+        }
+      }
+    }
+    void Promise.all(Array.from({ length: Math.min(4, authorized.length) }, worker))
+    return () => { live = false }
+  }, [items, status])
+
+  function handlerLabel(id) {
+    const assignment = assignments[id]
+    if (assignment === undefined) return 'Loading…'
+    if (assignment === null || !Object.hasOwn(assignment, 'handler')) return 'Unavailable'
+    if (assignment.handler === null) return 'Unassigned'
+    return assignment.handler.name || assignment.handler.email || 'Unavailable'
+  }
+
   if (user?.canAccessHrWorkspace !== true || status === 'denied') return <p role="alert">HR workspace is unavailable for this account.</p>
 
   function chooseTab(value) {
@@ -112,7 +142,7 @@ export default function HrWorkspace() {
           <th>Incident</th><th>Responsible Department</th><th>Status</th><th>Assigned handler</th><th>Action</th>
         </tr></thead><tbody>{visible.map(item => <tr key={item.id}>
           <td>{item.incidentNumber}</td><td>{item.responsibleDepartmentName || 'Unavailable'}</td><td>{labelize(item.status)}</td>
-          <td>{item.assignedOwner || 'Unassigned'}</td><td>
+          <td>{handlerLabel(item.id)}</td><td>
             {tab === 'cases' ? <Link to={`/incidents/${item.id}`}>Open HR case</Link>
               : <button type="button" className="btn btn-link" onClick={() => review(item.id)}>Review oversight</button>}
           </td></tr>)}</tbody></table></div>}
@@ -124,7 +154,7 @@ export default function HrWorkspace() {
           {detail && <>
             <p><strong>Incident:</strong> {detail.incidentNumber}</p>
             <p><strong>Responsible Department:</strong> {detail.responsibleDepartmentName}</p>
-            <p><strong>Assigned handler:</strong> {detail.assignedOwner || 'Unassigned'}</p>
+            <p><strong>Assigned handler:</strong> {handlerLabel(detail.id)}</p>
             <p><strong>Acknowledgement:</strong> {acknowledgement?.acknowledgedAt
               ? `Recorded ${formatDate(acknowledgement.acknowledgedAt)} by account ${acknowledgement.actorId}`
               : 'Not recorded or unavailable'}</p>
