@@ -50,6 +50,15 @@ function confirm() {
   fireEvent.change(within(work()).getByLabelText(/^Resolution Details/), { target: { value: 'Connectivity restored' } })
   fireEvent.click(within(work()).getByRole('button', { name: 'Confirm Resolution' }))
 }
+test('case handler can save preventive action with investigation', async () => {
+  incident = { ...incident, authorizationCapabilitiesAvailable: true, canHandleAssignedCase: true, preventiveAction: 'Existing prevention' }
+  await mount('REPORTER', 'resolver@example.test')
+  const prevention = within(work()).getByLabelText(/^Preventive Action/)
+  expect(prevention.value).toBe('Existing prevention')
+  fireEvent.change(prevention, { target: { value: 'Prevent recurrence' } })
+  fireEvent.click(within(work()).getByRole('button', { name: 'Save Progress' }))
+  await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('/api/incidents/12/investigation', expect.objectContaining({ preventiveAction: 'Prevent recurrence' })))
+})
 test.each(['ADMIN', 'IT_HANDLER'])('%s can immediately edit findings/actions in working states', async role => {
   await mount(role)
   expect(within(work()).getByLabelText(/^Investigation Details/).value).toBe('Existing findings')
