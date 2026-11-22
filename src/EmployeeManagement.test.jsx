@@ -55,6 +55,12 @@ test.each(['Employee ID already exists.', 'Official email already exists.', 'You
   expect((await screen.findByRole('alert')).textContent).toBe(message)
   expect(screen.getByLabelText('Employee ID').value).toBe('2')
 })
+test('explains a duplicate conflict without a response message and preserves the draft', async () => {
+  apiClient.post.mockRejectedValue({ response: { status: 409, data: { status: 409, error: 'Conflict' } } })
+  view(); fill(); fireEvent.click(screen.getByRole('button', { name: 'Add Employee' }))
+  expect((await screen.findByRole('alert')).textContent).toBe('Employee ID or official email already exists. Check the record and try again.')
+  expect(screen.getByLabelText('Employee ID').value).toBe('2')
+})
 test('loading disables form and prevents overlapping submissions', async () => {
   let finish
   apiClient.post.mockReturnValue(new Promise(resolve => { finish = resolve }))

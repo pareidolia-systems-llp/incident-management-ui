@@ -104,7 +104,9 @@ export default function EmployeeManagement() {
     } catch (requestError) {
       const response = requestError.response
       setError([400, 409].includes(response?.status) && typeof response.data?.message === 'string'
-        ? response.data.message : employeeError(requestError, 'Unable to save employee. Please try again.'))
+        ? response.data.message : response?.status === 409
+          ? 'Employee ID or official email already exists. Check the record and try again.'
+          : employeeError(requestError, 'Unable to save employee. Please try again.'))
     } finally { busy.current = false; setSaving(false) }
   }
   async function confirmChanges() {
