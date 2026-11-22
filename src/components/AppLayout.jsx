@@ -56,7 +56,7 @@ function AppLayout() {
   }
   const [signingOut, setSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState('')
-  const canCreateIncidents = ['REPORTER', 'ADMIN'].includes(user.role)
+  const canCreateIncidents = ['REPORTER', 'ADMIN', 'IT_HANDLER', 'REVIEWER'].includes(user.role)
   const currentNavigation = guardedNavigation?.user === user ? guardedNavigation : null
 
   async function handleLogout() {

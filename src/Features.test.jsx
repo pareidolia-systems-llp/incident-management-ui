@@ -32,6 +32,10 @@ function withUser(component, role = 'REPORTER', route = '/') {
 function shell() {
   return <Routes><Route element={<AppLayout />}><Route path="/" element={<h1>Dashboard page</h1>} /><Route path="/incidents" element={<h1>Incidents page</h1>} /><Route path="/incidents/new" element={<h1>Create page</h1>} /></Route></Routes>
 }
+test.each(['REPORTER', 'REVIEWER', 'IT_HANDLER', 'ADMIN'])('active %s can open incident creation', async (role) => {
+  withUser(shell(), role)
+  expect(screen.getByRole('link', { name: 'Create Incident' })).toBeTruthy()
+})
 test('sidebar collapses, persists through remount, navigates and signs out', async () => {
   let view = withUser(shell())
   fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
@@ -216,11 +220,15 @@ test('both department lists use all five active options and submit independent I
   expect(Array.from(responsible.options).slice(1).map(option => option.textContent)).toEqual(departments.map(item => item.displayName))
   expect(reporter.value).toBe('5')
   expect(responsible.value).toBe('7')
+  expect(screen.getByText('Owner')).toBeTruthy()
+  expect(screen.getByText('owner@example.test')).toBeTruthy()
+  expect(document.querySelector('input[name="reportedBy"]')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Create Incident' }))
   await screen.findByText('Created incident')
   expect(apiClient.post).toHaveBeenCalledWith('/api/incidents', expect.objectContaining({
     reporterDepartmentId: 5, responsibleDepartmentId: 7,
   }), expect.objectContaining({ headers: expect.objectContaining({ 'Idempotency-Key': expect.any(String) }) }))
+  expect(apiClient.post.mock.calls[0][1]).not.toHaveProperty('reportedBy')
 })
 test('reporter chooses an available operational department', async () => {
   apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/reporting-departments')

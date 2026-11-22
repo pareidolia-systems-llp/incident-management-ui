@@ -30,7 +30,7 @@ function CreateIncident() {
   const [reportingDepartments, setReportingDepartments] = useState(null)
   const [departmentLookupFailed, setDepartmentLookupFailed] = useState(false)
   const createIssueTypes = [...issueTypes, 'HR_ISSUE']
-  const canCreate = ['REPORTER', 'ADMIN'].includes(user.role)
+  const canCreate = ['REPORTER', 'ADMIN', 'IT_HANDLER', 'REVIEWER'].includes(user.role)
 
   useEffect(() => {
     if (!canCreate) return
