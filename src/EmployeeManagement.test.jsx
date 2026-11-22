@@ -18,6 +18,7 @@ function fill() {
   fireEvent.change(screen.getByLabelText('Employee ID'), { target: { value: '2' } })
   fireEvent.change(screen.getByLabelText('Employee Name'), { target: { value: 'Employee Two' } })
   fireEvent.change(screen.getByLabelText('Official Email'), { target: { value: 'two@example.test' } })
+  fireEvent.change(screen.getByLabelText('Reason for adding employee'), { target: { value: 'Synthetic onboarding' } })
 }
 test('department-head designation controls are disabled by default', async () => {
   view()
@@ -27,9 +28,16 @@ test('department-head designation controls are disabled by default', async () =>
 test('submits only profile fields and resets after success', async () => {
   view(); fill(); fireEvent.click(screen.getByRole('button', { name: 'Add Employee' }))
   await screen.findByText('Employee added successfully.')
-  expect(apiClient.post).toHaveBeenCalledWith('/api/admin/employees', { employeeId: '2', employeeName: 'Employee Two', officialEmail: 'two@example.test' })
+  expect(apiClient.post).toHaveBeenCalledWith('/api/admin/employees', { employeeId: '2', employeeName: 'Employee Two', officialEmail: 'two@example.test', reason: 'Synthetic onboarding' })
   expect(screen.getByLabelText('Employee ID').value).toBe('')
   expect(screen.queryByLabelText(/role/i)).toBeNull()
+})
+test('requires a reason before adding an employee', () => {
+  const result = view(); fill()
+  fireEvent.change(screen.getByLabelText('Reason for adding employee'), { target: { value: '  ' } })
+  fireEvent.submit(result.container.querySelector('form'))
+  expect(screen.getByRole('alert').textContent).toContain('reason')
+  expect(apiClient.post).not.toHaveBeenCalled()
 })
 test('blocks empty and whitespace fields and uses native email validation', () => {
   const result = view()

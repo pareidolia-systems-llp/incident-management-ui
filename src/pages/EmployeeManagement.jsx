@@ -94,11 +94,13 @@ export default function EmployeeManagement() {
       } finally { busy.current = false; setSaving(false) }
       return
     }
+    if (!reason.trim()) { setError('A reason for adding the employee is required.'); return }
+    payload.reason = reason.trim()
     busy.current = true; setSaving(true)
     try {
       await createEmployee(payload)
       setSuccess(editing === null ? 'Employee added successfully.' : 'Employee updated successfully.')
-      setForm(editing === null ? emptyForm : addDraft.current); setEditing(null); refresh()
+      setForm(editing === null ? emptyForm : addDraft.current); setEditing(null); setReason(''); refresh()
     } catch (requestError) {
       const response = requestError.response
       setError([400, 409].includes(response?.status) && typeof response.data?.message === 'string'
@@ -156,6 +158,8 @@ export default function EmployeeManagement() {
             <textarea className="form-control" id="changeReason" maxLength={500} value={reason}
               onChange={event => setReason(event.target.value)} placeholder="For example: HR master record correction" />
           </div>}
+          {editing === null && <div className="mb-3"><label className="form-label" htmlFor="createReason">Reason for adding employee</label>
+            <textarea className="form-control" id="createReason" maxLength={500} value={reason} onChange={event => setReason(event.target.value)} required /></div>}
           {editing !== null && <p>Official email is read-only. Changes require a separate identity verification and audited account-linking review.</p>}
           <button className="btn btn-primary" type="submit">{saving ? (editing === null ? 'Adding employee...' : 'Saving employee...') : (editing === null ? 'Add Employee' : 'Save Changes')}</button>
           {editing !== null && <button className="btn btn-secondary ms-2" type="button" onClick={() => { setEditing(null); setOriginal(null); setReason(''); setConfirmation(null); setForm(addDraft.current); setError(''); setSuccess('') }}>Cancel</button>}
