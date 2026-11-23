@@ -53,3 +53,13 @@ test('range server rejection displays a clear validation message and keeps enter
   expect(screen.getByLabelText('From Date').value).toBe('2026-10-01')
   expect(saveDownload).not.toHaveBeenCalled()
 })
+
+test('tracking log uses the separately protected export endpoint and filename', async () => {
+  render(<MonthlyReport />)
+  fill('Export', 'tracking')
+  fill('Month', '2026-10')
+  fireEvent.click(screen.getByRole('button', { name: 'Download Excel' }))
+  await waitFor(() => expect(saveDownload).toHaveBeenCalledOnce())
+  expect(apiClient.get).toHaveBeenCalledExactlyOnceWith('/api/reports/incidents/tracking-log', { params: { year: 2026, month: 10 }, responseType: 'blob' })
+  expect(saveDownload).toHaveBeenCalledWith(expect.any(Blob), 'incident-tracking-log-2026-10.xlsx')
+})

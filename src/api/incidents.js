@@ -15,6 +15,15 @@ export async function getIncidentHistory(id) {
   return Array.isArray(response.data) ? response.data : response.data.content || []
 }
 
+// Use a getter so local/test feature-flag changes are observed without
+// rebuilding the module. Production Vite values remain compile-time config.
+export const slaIndicatorsEnabled = () => import.meta.env.VITE_SLA_INDICATORS === 'true'
+
+export async function getSlaMilestones(id) {
+  const response = await apiClient.get(`/api/incidents/${id}/sla`)
+  return Array.isArray(response.data) ? response.data : []
+}
+
 export async function getResponsibleDepartments() {
   return (await apiClient.get('/api/incidents/responsible-departments')).data
 }

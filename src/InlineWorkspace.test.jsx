@@ -116,6 +116,16 @@ test('assignment-enabled mode retains the separate assignment panel', async () =
   expect(screen.getByLabelText(/^Investigation Details/)).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Resolve Incident' })).toBeNull()
 })
+test('SLA indicators are fetched and shown only when the local feature flag is enabled', async () => {
+  vi.stubEnv('VITE_SLA_INDICATORS', 'true')
+  const milestones = [{ milestone: 'ACKNOWLEDGEMENT', deadlineAt: '2026-11-23T12:00:00Z', completedAt: null, remainingSeconds: 1800, deadlineExceeded: false }]
+  apiClient.get.mockImplementation(async url => ({ data: url.endsWith('/sla') ? milestones : url.endsWith('/history') ? history : url.endsWith('/attachments') ? attachments : incident }))
+  await mount()
+  expect(await screen.findByRole('region', { name: 'SLA milestones' })).toBeTruthy()
+  expect(screen.getByText('Acknowledgement')).toBeTruthy()
+  expect(screen.getByText('Remaining: 0h 30m')).toBeTruthy()
+  expect(apiClient.get).toHaveBeenCalledWith('/api/incidents/12/sla')
+})
 test('reporter cannot see operational fields', async () => {
   await mount('REPORTER')
   expect(screen.queryByLabelText(/^Investigation Details/)).toBeNull()
@@ -210,13 +220,32 @@ test('backend read-only case capabilities hide work and modification controls fo
   expect(screen.queryByRole('button', { name: 'Upload screenshots' })).toBeNull()
 })
 
-test('case-authorized reporter can investigate and resolve without gaining administration', async () => {
+test('case-authorized department resolver can investigate, resolve and add evidence without gaining administration', async () => {
   incident = { ...incident, authorizationCapabilitiesAvailable: true, canHandleAssignedCase: true, canHandleIncident: true, canModifyIncident: false, canChangePriority: false }
   await mount('REPORTER', 'handler@example.test')
   expect(within(work()).getByLabelText(/^Investigation Details/)).toBeTruthy()
   expect(within(work()).getByRole('button', { name: 'Resolve Incident' })).toBeTruthy()
   expect(screen.queryByRole('button', { name: /Change Priority|Assign Incident|Close Incident/i })).toBeNull()
-  expect(screen.queryByRole('button', { name: 'Upload screenshots' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Upload screenshots' })).toBeTruthy()
+  // Native <summary> preserves details keyboard semantics; it is not exposed
+  // as an ARIA button by Testing Library.
+  expect(screen.getByText('More Actions', { selector: 'summary' })).toBeTruthy()
+})
+
+test('assigned resolver reassesses priority with both concurrency versions and an audited reason', async () => {
+  incident = { ...incident, priority: 'LOW', authorizationCapabilitiesAvailable: true, canHandleAssignedCase: true,
+    canHandleIncident: true, canModifyIncident: false, canChangePriority: true,
+    priorityRevisionVersion: 2, priorityAssignmentVersion: 5 }
+  await mount('REPORTER', 'handler@example.test')
+  fireEvent.click(screen.getByText('More Actions', { selector: 'summary' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Reassess Priority' }))
+  const dialog = screen.getByRole('dialog', { name: 'Reassess Priority' })
+  fireEvent.change(within(dialog).getByLabelText(/^New priority/), { target: { value: 'HIGH' } })
+  fireEvent.change(within(dialog).getByLabelText(/^Reason for reassessment/), { target: { value: 'Verified higher impact' } })
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Update Priority' }))
+  await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('/api/incidents/12/priority', {
+    priority: 'HIGH', remarks: 'Verified higher impact', expectedPriorityRevisionVersion: 2, expectedAssignmentVersion: 5,
+  }))
 })
 
 test('read-only HR admin does not receive closed-case review controls', async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import usePolling from '../hooks/usePolling'
 import { historyChange, historyActionLabel, historyActorLabel, historyRemarks, isFieldTransition, activityFilters, filterActivity } from '../utils/incidentHistory'
 import IncidentAttachments from '../components/IncidentAttachments'
@@ -7,7 +7,7 @@ import { reporterWaitingMessage } from '../utils/incidentLifecycle'
 import ImagePicker from '../components/ImagePicker'
 import { uploadAttachments } from '../api/attachments'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { addWorkNote, assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, reclassifyIncident, resolveIncident, reviewIncident, submitResolutionFeedback, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
+import { addWorkNote, assignIncident, changeIncidentPriority, changeIncidentSeverity, closeIncident, escalateIncident, getIncident, getIncidentHistory, getSlaMilestones, reclassifyIncident, resolveIncident, reviewIncident, slaIndicatorsEnabled, submitResolutionFeedback, updateEvidenceReference, updateInvestigation, validateIncident } from '../api/incidents'
 import useAuth from '../auth/useAuth'
 import ApiState from '../components/ApiState'
 import { SeverityBadge, StatusBadge } from '../components/IncidentBadges'
@@ -65,6 +65,7 @@ function IncidentDetailsPage() {
   const location = useLocation()
   const { user } = useAuth()
   const [incident, setIncident] = useState(null)
+  const [slaMilestones, setSlaMilestones] = useState([])
   const [history, setHistory] = useState([])
   const [state, setState] = useState('loading')
   const [error, setError] = useState('')
@@ -103,6 +104,13 @@ function IncidentDetailsPage() {
   const refresh = usePolling(fetchIncident, !activeAction && !savingAction && !investigationDirty && !resolutionOpen && !workspaceSaving)
   const loadIncident = () => refresh()
 
+  useEffect(() => {
+    if (!slaIndicatorsEnabled()) return undefined
+    let active = true
+    getSlaMilestones(id).then((milestones) => { if (active) setSlaMilestones(milestones) }).catch(() => { if (active) setSlaMilestones([]) })
+    return () => { active = false }
+  }, [id, incident?.updatedAt])
+
   function openAction(actionKey) {
     if (workspacePending.current || savingAction) return
     const action = actionDefinitions[actionKey]
@@ -134,7 +142,12 @@ function IncidentDetailsPage() {
     setActionError('')
     setActionErrors({})
     try {
-      await action.submit(id, createPayload(action, actionValues))
+      const payload = createPayload(action, actionValues)
+      if (activeAction === 'priority' && incident.priorityRevisionVersion != null && incident.priorityAssignmentVersion != null) {
+        payload.expectedPriorityRevisionVersion = incident.priorityRevisionVersion
+        payload.expectedAssignmentVersion = incident.priorityAssignmentVersion
+      }
+      await action.submit(id, payload)
       await uploadActionScreenshots(activeAction, actionFiles)
       setActiveAction(null)
       setActionValues({})
@@ -216,7 +229,9 @@ function IncidentDetailsPage() {
   const canPerformReviewActions = ['REVIEWER', 'ADMIN'].includes(user.role) && (!hasCaseCapabilities || incident.canModifyIncident === true)
   const reporterEmail = typeof incident.reportedBy === 'string' ? incident.reportedBy.trim().toLowerCase() : ''
   const actorEmail = typeof user.email === 'string' ? user.email.trim().toLowerCase() : ''
-  const canUploadAttachment = ['REPORTER', 'IT_HANDLER', 'ADMIN'].includes(user.role)
+  // A server-confirmed current case handler may add evidence without acquiring
+  // an unrelated IT role. The API remains the authorization boundary.
+  const canUploadAttachment = canPerformCaseWork || ['REPORTER', 'IT_HANDLER', 'ADMIN'].includes(user.role)
     && (!hasCaseCapabilities || (user.role === 'REPORTER'
       ? Boolean(actorEmail && actorEmail === reporterEmail)
       : incident.canModifyIncident === true))
@@ -225,20 +240,23 @@ function IncidentDetailsPage() {
   const availableActions = [...lifecycle, ...(canPerformCaseWork && incident.status !== 'CLOSED' ? ['workNote'] : [])]
   const modificationActions = hasCaseCapabilities && incident.canChangePriority !== true
     ? operationalActionKeys.filter(action => action !== 'priority') : operationalActionKeys
-  const availableOperationalActions = incident.status === 'CLOSED' ? [] : canPerformOperationalActions ? modificationActions : incident.canChangePriority === true ? ['priority'] : []
+  const availableOperationalActions = incident.status === 'CLOSED' ? [] : canPerformOperationalActions ? modificationActions
+    : canPerformCaseWork ? ['evidence', ...(incident.canChangePriority === true ? ['priority'] : [])]
+      : incident.canChangePriority === true ? ['priority'] : []
   return (
     <>
       <PageTitle title={incident.incidentNumber || 'Incident Details'} description={incident.title} actions={<Link className="btn btn-outline-secondary" to="/incidents">Back to Incidents</Link>} />
       <div className="d-flex flex-wrap gap-2 mb-3"><StatusBadge status={incident.status} /><SeverityBadge severity={incident.severity} /></div>
       {incident.issueStillPersists && <div className="alert alert-warning" role="status">
         <h2 className="h6">Issue reported as still unresolved</h2>
-        <p>The reporter confirmed that the previous resolution did not fix the issue. The incident has returned to IT for further investigation.</p>
+        <p>The reporter confirmed that the previous resolution did not fix the issue. The incident has returned to its responsible department for further investigation.</p>
         <div>Reported by: {incident.issueStillPersistsReportedBy}</div>
         <div>Reported at: {formatDate(incident.issueStillPersistsAt)}</div>
       </div>}
       {location.state?.uploadWarning && <div className="alert alert-warning" role="alert">{location.state.uploadWarning}</div>}
       {evidenceUploadWarning && <div className="alert alert-warning" role="alert">{evidenceUploadWarning}</div>}
       <IncidentStatusTracker incident={incident} />
+      {slaIndicatorsEnabled() && <SlaIndicators milestones={slaMilestones} />}
       {employeeAssignmentEnabled() && <IncidentAssignment key={id} incidentId={id} responsibleDepartmentName={incident.responsibleDepartmentName} onAssigned={() => refresh(true, false)} />}
       <ActionsPanel operational={canPerformCaseWork} waitingMessage={user.role === 'REPORTER' && !canPerformCaseWork ? reporterWaitingMessage(incident) : null} actionKeys={availableActions} operationalActionKeys={availableOperationalActions} reviewCompleted={reviewCompleted && canPerformReviewActions} onOpen={openAction} disabled={workspaceSaving || savingAction} inlineWorkspace={availableActions.includes('investigation') ? <InlineWorkspace canResolve={availableActions.includes('resolve')} values={investigationValues} files={investigationFiles} onFilesChange={setInvestigationFiles} onChange={editInvestigation} saving={workspaceSaving || savingAction} dirty={investigationDirty} error={workspaceError} errors={workspaceErrors} notice={workspaceNotice} resolutionOpen={resolutionOpen} resolutionValues={resolutionValues} onResolutionChange={event => { setResolutionValues(current => ({ ...current, [event.target.name]: event.target.value })); setWorkspaceError(''); setWorkspaceErrors({}) }} onCancelResolution={() => setResolutionOpen(false)} onSave={() => runWorkspace('save')} onResolve={() => runWorkspace('resolve')} onConfirm={() => runWorkspace('confirm')} /> : null} />
       <AuditTrail history={history} state={historyState} error={historyError} onRetry={loadIncident} />
@@ -247,6 +265,31 @@ function IncidentDetailsPage() {
       {activeAction && <ActionModal currentAssessment={incident[activeAction]} actionKey={activeAction} action={actionDefinitions[activeAction]} user={user} values={actionValues} errors={actionErrors} error={actionError} saving={savingAction} files={actionFiles} onFilesChange={setActionFiles} onChange={updateActionValue} onClose={closeAction} onSubmit={submitAction} />}
     </>
   )
+}
+
+function SlaIndicators({ milestones }) {
+  if (!milestones.length) return null
+  return <section className="card section-card mb-3" aria-labelledby="sla-indicators-title"><div className="card-body">
+    <h2 className="h5 text-dark mb-2" id="sla-indicators-title">SLA milestones</h2>
+    <div className="row g-2">{milestones.map((milestone) => <div className="col-md-4" key={milestone.milestone}>
+      <div className={`border rounded p-2 ${milestone.deadlineExceeded ? 'border-danger' : milestone.completedAt ? 'border-success' : 'border-secondary'}`}>
+        <div className="fw-semibold">{milestoneLabel(milestone.milestone)}</div>
+        <div className="small text-secondary">Deadline: {formatDate(milestone.deadlineAt)}</div>
+        <div className={`small ${milestone.deadlineExceeded ? 'text-danger' : ''}`}>{milestone.completedAt ? (milestone.targetMet ? 'Met' : 'Completed after target') : formatRemaining(milestone.remainingSeconds)}</div>
+      </div>
+    </div>)}</div>
+  </div></section>
+}
+
+function milestoneLabel(value) {
+  return labelize(value).toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase())
+}
+
+function formatRemaining(seconds) {
+  const absolute = Math.abs(Number(seconds) || 0)
+  const hours = Math.floor(absolute / 3600)
+  const minutes = Math.floor((absolute % 3600) / 60)
+  return `${seconds < 0 ? 'Overdue by ' : 'Remaining: '}${hours}h ${minutes}m`
 }
 
 function ActionsPanel({ operational, waitingMessage, actionKeys: availableActionKeys, operationalActionKeys: activeOperationalActions, reviewCompleted, onOpen, inlineWorkspace, disabled }) {

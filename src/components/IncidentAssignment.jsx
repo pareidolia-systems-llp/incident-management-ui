@@ -35,6 +35,7 @@ function AssignmentEditor({ state, initialIt, onSaved, onStale }) {
   const [handler, setHandler] = useState(null)
   const [mode, setMode] = useState('another')
   const self = initialIt && Number.isSafeInteger(state.selfCandidate?.id) && state.selfCandidate.id > 0 ? state.selfCandidate : null
+  const initialAssignment = state.version === 0 && !state.handler
   const selectedHandler = mode === 'self' ? self : handler
   const [reason, setReason] = useState('')
   const [confirmed, setConfirmed] = useState(false)
@@ -46,7 +47,7 @@ function AssignmentEditor({ state, initialIt, onSaved, onStale }) {
     setBusy(true); setError('')
     try {
       const payload = { handlerUserId: selectedHandler.id, expectedVersion: state.version, expectedClassificationVersion: state.classificationVersion, reason: reason.trim() }
-      if (initialIt) await acknowledgeAndAssign(state.incidentId, payload)
+      if (initialAssignment) await acknowledgeAndAssign(state.incidentId, payload)
       else await saveAssignment(state.incidentId, payload)
       await onSaved?.()
     } catch (failure) {
@@ -57,7 +58,7 @@ function AssignmentEditor({ state, initialIt, onSaved, onStale }) {
     } finally { setBusy(false) }
   }
   return <form onSubmit={submit} aria-label={state.handler ? 'Reassign incident' : 'Assign incident'}>
-    <h3 className="h6">{state.handler ? 'Reassign Incident' : initialIt ? 'Acknowledge and assign eligible handler' : 'Assign eligible handler'}</h3>
+    <h3 className="h6">{state.handler ? 'Reassign Incident' : initialAssignment ? 'Acknowledge and assign eligible handler' : 'Assign eligible handler'}</h3>
     {self && <fieldset className="mb-3"><legend className="fs-6">Choose assignment</legend>
       <label className="d-block"><input type="radio" name="assignmentMode" value="self" checked={mode === 'self'} disabled={busy} onChange={() => { setMode('self'); setHandler(null); setConfirmed(false) }} /> Assign to Myself</label>
       <label className="d-block"><input type="radio" name="assignmentMode" value="another" checked={mode === 'another'} disabled={busy} onChange={() => { setMode('another'); setHandler(null); setConfirmed(false) }} /> Assign to Another Employee</label>
@@ -67,6 +68,6 @@ function AssignmentEditor({ state, initialIt, onSaved, onStale }) {
     <label className="form-label">Assignment reason<textarea className="form-control" maxLength={500} required disabled={busy} value={reason} onChange={event => { setReason(event.target.value); setConfirmed(false) }} /></label>
     <label className="d-block my-2"><input type="checkbox" checked={confirmed} disabled={busy || !selectedHandler} onChange={event => setConfirmed(event.target.checked)} /> Confirm assignment to {selectedHandler?.email || 'the selected handler'}</label>
     {error && <p role="alert">{error}</p>}
-    <button className="btn btn-primary" disabled={busy || !selectedHandler || selectedHandler.id === state.handler?.id || !reason.trim() || !confirmed}>{busy ? 'Saving…' : state.handler ? 'Reassign Incident' : initialIt ? 'Acknowledge and assign' : 'Confirm assignment'}</button>
+    <button className="btn btn-primary" disabled={busy || !selectedHandler || selectedHandler.id === state.handler?.id || !reason.trim() || !confirmed}>{busy ? 'Saving…' : state.handler ? 'Reassign Incident' : initialAssignment ? 'Acknowledge and assign' : 'Confirm assignment'}</button>
   </form>
 }
