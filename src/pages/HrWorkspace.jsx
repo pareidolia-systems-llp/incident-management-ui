@@ -5,6 +5,8 @@ import { getIncident, getIncidentHistory, getIncidents } from '../api/incidents'
 import { getCurrentUser } from '../api/auth'
 import { getAcknowledgement, getAssignment } from '../api/assignment'
 import IncidentStatusTracker from '../components/IncidentStatusTracker'
+import HrSecurityQueue from '../components/HrSecurityQueue'
+import { hrSecurityEnabled } from '../api/hrSecurity'
 import PageTitle from '../components/PageTitle'
 import { formatDate, labelize } from '../utils/incident'
 import { historyActionLabel, historyActorLabel, historyChange, historyRemarks } from '../utils/incidentHistory'
@@ -15,6 +17,7 @@ const isHrDepartment = incident => incident.hrResponsibleDepartment === true
 export default function HrWorkspace() {
   const { user } = useAuth()
   const [tab, setTab] = useState('cases')
+  const [revision, setRevision] = useState(0)
   const [items, setItems] = useState([])
   const [status, setStatus] = useState('loading')
   const [filter, setFilter] = useState('')
@@ -37,7 +40,7 @@ export default function HrWorkspace() {
       if (live && data) { setItems(data); setStatus('ready') }
     }).catch(() => { if (live) setStatus('error') })
     return () => { live = false }
-  }, [user])
+  }, [user, revision])
 
   useEffect(() => {
     if (selected == null) return
@@ -125,11 +128,27 @@ export default function HrWorkspace() {
     <PageTitle title="HR Workspace" description="Review authorized HR cases and department oversight." />
     <div role="tablist" aria-label="HR workspace" className="d-flex gap-2 mb-3">
       <button type="button" role="tab" aria-selected={tab === 'cases'} className="btn btn-outline-primary" onClick={() => chooseTab('cases')}>HR Cases</button>
+      {hrSecurityEnabled() && <button
+        type="button"
+        role="tab"
+        aria-selected={tab === 'security'}
+        className="btn btn-outline-primary"
+        onClick={() => chooseTab('security')}>
+        Pending Security Actions
+      </button>}
       <button type="button" role="tab" aria-selected={tab === 'oversight'} className="btn btn-outline-primary" onClick={() => chooseTab('oversight')}>Department Oversight</button>
     </div>
     {status === 'loading' && <p role="status">Loading authorized incidents…</p>}
     {status === 'error' && <p role="alert">Authorized incidents are unavailable. Please reload.</p>}
-    {status === 'ready' && <section role="tabpanel" aria-label={tab === 'cases' ? 'HR Cases' : 'Department Oversight'}>
+    {status !== 'denied' && tab === 'security' && hrSecurityEnabled() &&
+      <div role="tabpanel" aria-label="Pending Security Actions">
+        <HrSecurityQueue onChanged={() => {
+          setItems([])
+          setAssignments({})
+          setRevision(value => value + 1)
+        }} />
+      </div>}
+    {status === 'ready' && tab !== 'security' && <section role="tabpanel" aria-label={tab === 'cases' ? 'HR Cases' : 'Department Oversight'}>
       {tab === 'oversight' && <div className="mb-3">
         <label htmlFor="hr-responsible-filter" className="form-label">Responsible Department</label>
         <select id="hr-responsible-filter" className="form-select" value={filter} onChange={event => { setFilter(event.target.value); setSelected(null); setDetail(null) }}>
