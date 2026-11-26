@@ -38,7 +38,7 @@ export default function Help() {
     target.scrollIntoView?.({ block: 'start' })
   }, [hash, key])
   const canCreate = ['REPORTER', 'ADMIN'].includes(user.role)
-  const canReport = ['IT_HANDLER', 'ADMIN'].includes(user.role)
+  const canReport = user.canExportReports === true
   const guardedAssignment = employeeAssignmentEnabled()
   const employeeAdmin = user.canManageEmployees === true && import.meta.env.VITE_EMPLOYEE_MANAGEMENT_ENABLED === 'true'
   const departmentAdmin = (user.canManageDepartmentHeads === true || user.canManageHandlerEligibility === true || user.canManageEmployees === true) && import.meta.env.VITE_DEPARTMENT_ADMIN_ENABLED === 'true'
@@ -169,7 +169,7 @@ export default function Help() {
     <Section id="my-work-log"><p>IT Handler and Admin can record standalone work in My Work Log. Entries are private to their owner; Reporter has no access.</p><p>Add Work Entry starts with the current local date/time. Adjust it for earlier work, choose a category, and enter a summary, optional details and duration. Entries persist separately from incident work notes; editing and deleting are not available.</p></Section>
     <Section id="after-submission"><ol><li>The server generates a ticket number and records the signed-in reporter.</li><li>Check the initial status. Assigned means an owner has been set. Open means the incident is still waiting for assignment or review.</li><li>Your incident appears in your accessible incident list. Reporter sees their own incidents; other supported roles can view incidents according to their access.</li><li>IT Handler or Admin investigate, record evidence and actions, and resolve the issue.</li><li>The original reporter tests the fix, validates it, and then closes the incident—or reports that it still persists.</li><li>Reviewer or Admin may record a post-closure review.</li></ol><p>Open Incident Details to check progress and history; do not assume every update sends a notification.</p></Section>
     <Section id="audit-trail"><p>The incident history records meaningful actions, who performed them, when they occurred, and relevant changes or remarks. Examples include creation, automatic assignment, investigation, evidence updates, resolution, validation, closure, review, and Attachment Added for each successfully stored image.</p><p>Human actors come from the authenticated session. System identifies automatic actions such as initial assignment. Image content is stored separately from history; a safe filename may identify an attachment in its audit entry.</p></Section>
-    <Section id="monthly-reports"><p><strong>Available to IT Handler and Admin.</strong> Open Incidents, choose the month in Monthly Incident Report, and select Download Excel.</p>
+    <Section id="monthly-reports"><p><strong>Available to users with authorized reporting access.</strong> Open Incidents, choose the month in Monthly Incident Report, and select Download Excel.</p>
       <p>Choose <strong>Incident Tracking Log</strong> for the concise management export: ticket number, description, priority, reported date, assigned resolver, status, resolution date and closure details. The server applies the same incident authorization checks as the full report. Restricted HR descriptions and closure details are not included in the tracking export.</p>
       {canReport && <Link className="btn btn-outline-primary mb-3" to="/incidents">Open monthly reports in Incidents</Link>}
       <p>Alternatively, select Date / time range and enter From Date and To Date. From Time and To Time are optional. Without times, the full selected days are included; with times, the exact boundaries apply. Filtering uses the original Reported At date/time.</p><p>The selected month uses the original Reported At date/time. The workbook includes Incidents and Lifecycle History sheets for incidents you are permitted to export. It contains current details and history, including events recorded after the selected month. Very long text may be continued in a supporting sheet.</p><p><strong>This is not a month-end snapshot.</strong> Screenshot binary data is not included. A month without incidents produces an empty report with its structure.</p>
@@ -187,7 +187,7 @@ const tourSteps = [
   ['Resolution and Reporter Validation', 'The original reporter tests the fix when the incident is Resolved.', 'Validate the resolution if it works, then close the incident.'],
   ['What Happens When "Issue Still Persists"', 'The original reporter describes what still fails and can add supporting screenshots.', 'Feedback returns the incident to In Progress. If screenshots fail to upload, retry through Attachments.'],
   ['My Work Log', 'IT Handler and Admin can record their own standalone work, separate from an incident.', 'Work time defaults to now and can be adjusted for earlier work. Each person sees only their own entries.'],
-  ['Reports and Date/Time Filters', 'IT Handler and Admin can download reports from Incidents by month or date/time range.', 'Times are optional. The range filters the incident report time and includes the matching incidents’ history.'],
+  ['Reports and Date/Time Filters', 'Authorized users can download reports from Incidents by month or date/time range.', 'Times are optional. The range filters the incident report time and includes the matching incidents’ history.'],
 ]
 
 function QuickTour() {

@@ -26,8 +26,8 @@ beforeEach(() => {
   apiClient.post.mockResolvedValue({ data: incident })
 })
 afterEach(() => { cleanup(); vi.unstubAllEnvs() })
-function withUser(component, role = 'REPORTER', route = '/') {
-  return render(<AuthContext.Provider value={{ user: { ...user, role }, logout }}><MemoryRouter initialEntries={[route]}>{component}</MemoryRouter></AuthContext.Provider>)
+function withUser(component, role = 'REPORTER', route = '/', canExportReports = false) {
+  return render(<AuthContext.Provider value={{ user: { ...user, role, canExportReports }, logout }}><MemoryRouter initialEntries={[route]}>{component}</MemoryRouter></AuthContext.Provider>)
 }
 function shell() {
   return <Routes><Route element={<AppLayout />}><Route path="/" element={<h1>Dashboard page</h1>} /><Route path="/incidents" element={<h1>Incidents page</h1>} /><Route path="/incidents/new" element={<h1>Create page</h1>} /></Route></Routes>
@@ -73,15 +73,23 @@ test('narrow viewport defaults to compact navigation but respects an explicit ex
   withUser(shell())
   expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toBeTruthy()
 })
-test.each(['REPORTER', 'REVIEWER', 'IT_HANDLER', 'ADMIN'])('report visibility for %s', async (role) => {
-  withUser(<IncidentList />, role)
+test.each([
+  ['REPORTER', false],
+  ['REPORTER', true],
+  ['REVIEWER', false],
+  ['IT_HANDLER', true],
+  ['IT_HANDLER', false],
+  ['ADMIN', true],
+  ['ADMIN', false],
+])('report visibility for %s with capability %s', async (role, allowed) => {
+  withUser(<IncidentList />, role, '/', allowed)
   await screen.findByText('No incidents found.')
-  expect(Boolean(screen.queryByRole('button', { name: 'Download Excel' }))).toBe(['IT_HANDLER', 'ADMIN'].includes(role))
+  expect(Boolean(screen.queryByRole('button', { name: 'Download Excel' }))).toBe(allowed)
 })
 test('report sends selected month and downloads the response', async () => {
   const blob = new Blob(['xlsx'])
   apiClient.get.mockImplementation(async (url) => ({ data: url.includes('/reports/') ? blob : [] }))
-  withUser(<IncidentList />, 'IT_HANDLER')
+  withUser(<IncidentList />, 'IT_HANDLER', '/', true)
   fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-10' } })
   fireEvent.click(screen.getByRole('button', { name: 'Download Excel' }))
   await waitFor(() => expect(saveDownload).toHaveBeenCalledWith(blob, 'incident-report-2026-10.xlsx'))
@@ -409,6 +417,9 @@ test('failed screenshot upload shows a safe access message without reporting suc
   apiClient.post.mockRejectedValueOnce({ response: { status: 404, data: { message: 'sensitive backend detail' } } })
   withUser(<Routes><Route path="/incidents/:id" element={<IncidentDetails />} /></Routes>, 'REPORTER', '/incidents/12')
   const attachments = await screen.findByRole('region', { name: 'Attachments' })
+  await waitFor(() => {
+    expect(attachments.textContent).not.toContain('Loading attachments')
+  })
   fireEvent.change(attachments.querySelector('input[type=file]'), { target: { files: [new File(['png'], 'new.png', { type: 'image/png' })] } })
   fireEvent.click(screen.getByRole('button', { name: 'Upload screenshots' }))
   expect(await screen.findByText(/Screenshot upload is unavailable for this incident/)).toBeTruthy()

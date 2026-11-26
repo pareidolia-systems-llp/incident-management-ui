@@ -48,7 +48,7 @@ function IncidentList() {
   return (
     <>
       <PageTitle title="Incidents" description="Search and review reported incidents." actions={['REPORTER', 'ADMIN'].includes(user.role) ? <Link className="btn btn-primary" to="/incidents/new">Create Incident</Link> : null} />
-      {['IT_HANDLER', 'ADMIN'].includes(user.role) && <MonthlyReport />}
+      {user.canExportReports === true && <MonthlyReport />}
       {state === 'loading' && <ApiState type="loading" />}
       {state === 'error' && <ApiState type="error" message={error} onRetry={loadIncidents} />}
       {state === 'ready' && <>

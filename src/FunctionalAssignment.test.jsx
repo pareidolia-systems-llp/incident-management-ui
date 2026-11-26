@@ -105,3 +105,30 @@ test('server-authorized IT head can choose self-assignment through the acknowled
     handlerUserId: 4, expectedVersion: 0, expectedClassificationVersion: 3, reason: 'Personally handling',
   }))
 })
+
+test('assigned case with hidden handler does not appear unassigned', async () => {
+  assignmentState = {
+    ...state,
+    handler: null,
+    canAssign: false
+  }
+
+  render(<IncidentAssignment
+    incidentId={12}
+    incidentStatus="ASSIGNED"
+  />)
+
+  expect(await screen.findByText(
+    /Current handler: Handler information unavailable/
+  )).toBeTruthy()
+
+  expect(screen.queryByText(
+    'Current handler: Not assigned'
+  )).toBeNull()
+
+  expect(screen.queryByLabelText(
+    /Search eligible handlers/
+  )).toBeNull()
+
+  expect(apiClient.post).not.toHaveBeenCalled()
+})

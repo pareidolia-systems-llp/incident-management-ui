@@ -3,7 +3,7 @@ import HandlerPicker from './HandlerPicker'
 import IncidentDepartmentTransfer from './IncidentDepartmentTransfer'
 import { getAssignment, getAssignmentHistory, saveAssignment, acknowledgeAndAssign } from '../api/assignment'
 
-export default function IncidentAssignment({ incidentId, responsibleDepartmentName, onAssigned, onTransferred = onAssigned }) {
+export default function IncidentAssignment({ incidentId, incidentStatus, incidentUpdatedAt, responsibleDepartmentName, onAssigned, onTransferred = onAssigned }) {
   const [state, setState] = useState(null)
   const [history, setHistory] = useState([])
   const [error, setError] = useState('')
@@ -13,14 +13,18 @@ export default function IncidentAssignment({ incidentId, responsibleDepartmentNa
     let cancelled = false
     Promise.all([getAssignment(incidentId), getAssignmentHistory(incidentId)]).then(([data, entries]) => { if (!cancelled) { setState(data?.incidentId && Array.isArray(entries) ? data : null); setHistory(Array.isArray(entries) ? entries : []); setError('') } }).catch(() => { if (!cancelled) { setState(null); setHistory([]); setError('Assignment is unavailable. Check your access or reload.') } })
     return () => { cancelled = true }
-  }, [incidentId, revision])
+  }, [incidentId, revision, incidentStatus, incidentUpdatedAt])
   return <><section className="card section-card mb-3" aria-label="Employee assignment"><div className="card-body">
     <h2 className="h5">Employee assignment</h2>
     {error && <p role="alert">{error}</p>}
     {notice && <p role="alert">{notice}</p>}
     <button type="button" className="btn btn-link" onClick={() => { setState(null); setRevision(value => value + 1) }}>Refresh assignment</button>
-    {state && <><p>Classification: {state.classification}</p><p>Current handler: {state.handler ? `${state.handler.name} — ${state.handler.email}` : 'Not assigned'}</p><p>Proposed handler: {state.proposal ? `${state.proposal.name} — ${state.proposal.email}` : 'None'}</p>
-      {state.canAssign === true && Number.isSafeInteger(state.version) && state.version >= 0 && Number.isSafeInteger(state.classificationVersion) && state.classificationVersion >= 0 ? <AssignmentEditor key={`${incidentId}-${state.version}-${state.classificationVersion}-${revision}`} state={state} initialIt={responsibleDepartmentName === 'IT' && state.version === 0 && !state.handler} onSaved={async () => { setNotice(''); setState(null); setRevision(value => value + 1); await onAssigned?.() }} onStale={message => { setNotice(message); setState(null); setRevision(value => value + 1) }} /> : <p>Assignment is unavailable for this incident. Check its classification, applicable department or service-team rules, and your case permissions.</p>}
+    {state && <><p>Classification: {state.classification}</p><p>Current handler: {state.handler ? `${state.handler.name} — ${state.handler.email}` : incidentStatus && incidentStatus !== 'OPEN'
+          ? 'Handler information unavailable'
+          : 'Not assigned'}</p><p>Proposed handler: {state.proposal ? `${state.proposal.name} — ${state.proposal.email}` : 'None'}</p>
+      {state.canAssign === true
+        && !(incidentStatus && incidentStatus !== 'OPEN' && !state.handler)
+        && Number.isSafeInteger(state.version) && state.version >= 0 && Number.isSafeInteger(state.classificationVersion) && state.classificationVersion >= 0 ? <AssignmentEditor key={`${incidentId}-${state.version}-${state.classificationVersion}-${revision}`} state={state} initialIt={responsibleDepartmentName === 'IT' && state.version === 0 && !state.handler} onSaved={async () => { setNotice(''); setState(null); setRevision(value => value + 1); await onAssigned?.() }} onStale={message => { setNotice(message); setState(null); setRevision(value => value + 1) }} /> : <p>Assignment is unavailable for this incident. Check its classification, applicable department or service-team rules, and your case permissions.</p>}
       <ul aria-label="Assignment history">{history.map(entry => <li key={entry.version}>{entry.changedAt}: account {entry.actorId} changed handler {entry.previousHandlerId ?? 'none'} → {entry.newHandlerId} — {entry.reason}</li>)}</ul></>}
   </div></section>
   <IncidentDepartmentTransfer incidentId={incidentId} onRefresh={() => {

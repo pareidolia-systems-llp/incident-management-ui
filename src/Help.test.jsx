@@ -6,16 +6,16 @@ import { clearCsrfToken } from './api/csrf'
 import { helpFieldLinks, helpSections } from './utils/portalHelp'
 import { fieldGuidance } from './utils/incidentGuidance'
 vi.mock('./api/client', () => ({ backendBaseUrl: 'http://backend.test', default: { get: vi.fn(), post: vi.fn() } }))
-let role, canManageEmployees
+let role, canManageEmployees, canExportReports
 beforeEach(() => {
-  role = 'REPORTER'; canManageEmployees = false
+  role = 'REPORTER'; canManageEmployees = false; canExportReports = false
   vi.clearAllMocks()
   clearCsrfToken()
   localStorage.clear()
   window.history.replaceState({}, '', '/help')
   apiClient.get.mockImplementation(async url => {
     if (url === '/api/auth/csrf') return { data: { headerName: 'X-XSRF-TOKEN', token: 'test' } }
-    if (url === '/api/auth/me' && role) return { data: { role, email: 'owner@example.test', displayName: 'Owner', canManageEmployees } }
+    if (url === '/api/auth/me' && role) return { data: { role, email: 'owner@example.test', displayName: 'Owner', canManageEmployees, canExportReports } }
     throw { response: { status: 401 } }
   })
 })
@@ -26,7 +26,7 @@ test.each(['REPORTER', 'IT_HANDLER', 'REVIEWER', 'ADMIN'])('help is available to
   await screen.findByRole('heading', { name: 'How to Use This Portal' })
   expect(screen.getByRole('link', { name: 'How to Use' }).getAttribute('aria-current')).toBe('page')
   fireEvent.click(document.querySelector('#monthly-reports > summary'))
-  expect(Boolean(screen.queryByRole('link', { name: 'Open monthly reports in Incidents' }))).toBe(['IT_HANDLER', 'ADMIN'].includes(role))
+  expect(Boolean(screen.queryByRole('link', { name: 'Open monthly reports in Incidents' }))).toBe(canExportReports)
   for (const [id] of helpSections) expect(document.getElementById(id)).toBeTruthy()
   expect(apiClient.post).not.toHaveBeenCalled()
   expect(apiClient.get.mock.calls.every(([url]) => ['/api/auth/me', '/api/auth/csrf', '/api/incident-assignment/triage'].includes(url))).toBe(true)
@@ -228,4 +228,21 @@ test('approved employee administrators receive guidance only for enabled panels'
   expect(guide).toContain('Authorized HR staff and IT administrators use Employee Management')
   expect(guide).toContain('If the Department memberships panel appears')
   expect(guide).toContain('Transfer handoff requests and decisions are unavailable')
+})
+
+
+test.each([
+  ['REPORTER', true],
+  ['ADMIN', false],
+  ['IT_HANDLER', true],
+  ['REVIEWER', false],
+])('report shortcut follows server capability for %s (%s)', async (value, allowed) => {
+  role = value
+  canExportReports = allowed
+  render(<App />)
+  await screen.findByRole('heading', { name: 'How to Use This Portal' })
+  fireEvent.click(document.querySelector('#monthly-reports > summary'))
+  expect(Boolean(screen.queryByRole('link', {
+    name: 'Open monthly reports in Incidents'
+  }))).toBe(allowed)
 })

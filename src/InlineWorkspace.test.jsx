@@ -264,3 +264,60 @@ test('case-authorized operational actor with modify permission retains attachmen
   await mount('IT_HANDLER', 'handler@example.test')
   expect(screen.getByRole('button', { name: 'Upload screenshots' })).toBeTruthy()
 })
+
+
+test('closed SLA milestones do not display an active countdown', async () => {
+  vi.stubEnv('VITE_SLA_INDICATORS', 'true')
+  incident.status = 'CLOSED'
+
+  const milestones = [
+    {
+      milestone: 'CONTAIN',
+      deadlineAt: '2026-11-23T12:00:00Z',
+      completedAt: null,
+      remainingSeconds: 1800,
+      deadlineExceeded: false
+    },
+    {
+      milestone: 'RESOLVE',
+      deadlineAt: '2026-11-23T16:00:00Z',
+      completedAt: '2026-11-23T15:00:00Z',
+      targetMet: true,
+      remainingSeconds: 0,
+      deadlineExceeded: false
+    }
+  ]
+
+  apiClient.get.mockImplementation(async url => ({
+    data: url.endsWith('/sla') ? milestones
+      : url.endsWith('/history') ? history
+      : url.endsWith('/attachments') ? attachments
+      : incident
+  }))
+
+  await mount()
+
+  const region = await screen.findByRole(
+    'region', { name: 'SLA milestones' })
+
+  expect(within(region).getByText(
+    'Not completed at closure')).toBeTruthy()
+
+  expect(within(region).getByText('Met')).toBeTruthy()
+
+  expect(within(region).queryByText(
+    /Remaining:|Overdue by/)).toBeNull()
+})
+
+test('severity and revised priority have separate header labels', async () => {
+  incident.severity = 'LOW'
+  incident.priority = 'CRITICAL'
+
+  await mount()
+
+  expect(screen.getByText('Severity:').parentElement.textContent)
+    .toMatch(/Severity:\s*Low/i)
+
+  expect(screen.getByText('Priority:').parentElement.textContent)
+    .toMatch(/Priority:\s*Critical/i)
+})
